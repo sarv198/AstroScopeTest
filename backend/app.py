@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import json
 import requests
 
 app = Flask(__name__)
@@ -19,10 +20,6 @@ def neo_data():
     # TODO: Implement NEO data retrieval logic
     
     return jsonify({'data': 'NEO data endpoint - implementation needed'})
-
-
-import requests
-import json # You'll need requests for the API call
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
