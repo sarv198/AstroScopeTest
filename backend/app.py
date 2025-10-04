@@ -12,15 +12,14 @@ def hello_world():
 
 @app.route('/api/neo')
 def neo_data():
-
     content = request.json
     # parse the content for key info: filters, api to request
     # ...
     
     # use the nasa_api.py
-    def
-
-    return jsonify({'data': data})
+    # TODO: Implement NEO data retrieval logic
+    
+    return jsonify({'data': 'NEO data endpoint - implementation needed'})
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
@@ -28,7 +27,7 @@ API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
 
 # Note: The @app.route decorator implies a web framework (like Flask/Django). 
 # This completed function provides the necessary data retrieval logic.
-@app.route('/orbital_params/<string:des>'', methods=['GET']) 
+@app.route('/orbital_params/<string:des>', methods=['GET']) 
 def get_orbital_params(des):
     """
     Retrieves the six Keplerian orbital elements for a given designation (des).
