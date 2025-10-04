@@ -210,6 +210,72 @@ function createPlanets() {
     updateScales();
 }
 
+/**
+ * Creates a 2D orbit path in the Ecliptic (XY) plane using parameters derived
+ * from the external orbital_elements_to_ellipsecurve script and adds it to the scene.
+ *
+ * @param {object} orbitParams - The dictionary returned by the Python script:
+ * {aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation, aClockwise}
+ * @param {string} color - The hexadecimal color for the orbit line.
+ * @param {string} name - A name for the orbit group.
+ * @returns {THREE.Group} The group containing the orbit path.
+ */
+function drawRetrievedOrbit(orbitParams, color = 0xcc3333, name = "Retrieved Orbit") {
+    // 1. Create the Ellipse Curve using the calculated parameters.
+    // NOTE: Three.js EllipseCurve is defined in the XY plane by default.
+    const curve = new THREE.EllipseCurve(
+        orbitParams.aX,      // aX
+        orbitParams.aY,      // aY
+        orbitParams.xRadius, // xRadius
+        orbitParams.yRadius, // yRadius
+        orbitParams.aStartAngle, // aStartAngle (0)
+        orbitParams.aEndAngle,   // aEndAngle (2*PI)
+        orbitParams.aClockwise,  // aClockwise (false)
+        orbitParams.aRotation    // aRotation (angle of the major axis)
+    );
+
+    // 2. Generate points for the orbit line.
+    const points = curve.getPoints(300); // Increased points for smoother curve
+
+    // 3. Transform the 2D (X, Y) points to the 3D Three.js World (X, Z, -Y)
+    // Your Python script projects the 3D orbit onto the XY plane (Ecliptic).
+    // In your scene setup, the Ecliptic plane is **X-Z** (since you map `p.y` to `-p.z`).
+    const transformedPoints = points.map(p => new THREE.Vector3(p.x, 0, -p.y));
+
+    // 4. Create the Orbit Line object.
+    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(transformedPoints);
+    const orbitMaterial = new THREE.LineBasicMaterial({ color: color });
+    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+
+    // 5. Create a Group and add the line.
+    // The rotation (aRotation) is already factored into the EllipseCurve's points
+    // via the aRotation parameter, so no additional rotation is needed on the group.
+    const orbitGroup = new THREE.Group();
+    orbitGroup.add(orbitLine);
+    orbitGroup.name = name;
+    orbitGroup.userData.isCustomOrbit = true; // For potential visibility controls
+    
+    // Set a position for the orbit center (already included in aX, aY, but keeps objects grouped)
+    // The points are already offset by aX/aY, so the group position is (0,0,0).
+    
+    // 6. Add a small dot to represent the object's current position (at the start of the orbit for simplicity)
+    const objectDot = new THREE.Mesh(
+        new THREE.SphereGeometry(2, 8, 8), // Small size, adjust as needed
+        new THREE.MeshBasicMaterial({ color: color })
+    );
+    // The first point in the orbit is where the object is assumed to be at t=0
+    objectDot.position.copy(transformedPoints[0]);
+    objectDot.name = name + " Object";
+    objectDot.userData.isCustomObject = true;
+    objectDot.userData.aX = orbitParams.aX; // Store for potential future movement
+    objectDot.userData.aY = orbitParams.aY;
+
+    orbitGroup.add(objectDot);
+    
+    scene.add(orbitGroup);
+    return orbitGroup;
+}
+
 function createNEOs() {
     const neoCount = 150, neosGroup = new THREE.Group();
     neosGroup.name = "NEOs"; neosGroup.userData.key = "neos";
@@ -417,4 +483,5 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
+
 init();
