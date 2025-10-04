@@ -24,14 +24,9 @@ def neo_data():
     
     # TODO: use the backend data to return in jsonify format
     # use the nasa_api.py
-    #return jsonify({'data': data})
-    return jsonify({'message': 'nothing yet'})
-
-
-#@app.route('/stats/<des>')
-def get_neo_des():
-    pass
-
+    # TODO: Implement NEO data retrieval logic
+    
+    return jsonify({'data': 'NEO data endpoint - implementation needed'})
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
