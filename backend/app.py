@@ -1,35 +1,47 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import json
 import requests
-
+from utils import api_new
+from asteroid import get_high_risk_asteroid_data
+# set up flask app:
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route("/api/hello")
 def hello_world():
     return jsonify({'message': "Hello World"})
 
-@app.route('/api/neo')
-def neo_data():
 
+@app.route('/api/neo_data/', methods=['POST'])
+def neo_data():
     content = request.json
+
+    # the filter values
+    ip_min = content.get('ip_min')
+    approach_date = content.get('approach_date')
+    limit = content.get('limit')
+
+
+    
+    
     # parse the content for key info: filters, api to request
     # ...
     
+    # TODO: use the backend data to return in jsonify format
     # use the nasa_api.py
-    def
+    # TODO: Implement NEO data retrieval logic
+    
+    return jsonify({'data': 'NEO data endpoint - implementation needed'})
 
-    return jsonify({'data': data})
+
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
-API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
 
-# Note: The @app.route decorator implies a web framework (like Flask/Django). 
-# This completed function provides the necessary data retrieval logic.
-@app.route('/orbital_params/<string:des>'', methods=['GET']) 
-def get_orbital_params(des):
+
+@app.route('/orbital_params/<des>', methods=['GET']) 
+def get_orbital_params(des: str):
     """
     Retrieves the six Keplerian orbital elements for a given designation (des).
 
@@ -42,6 +54,7 @@ def get_orbital_params(des):
     
     # --- API Call ---
     # The 'des' query parameter is required to specify the asteroid/NEO.
+    API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
     params = {'des': des}
     
     try:
@@ -79,6 +92,7 @@ def get_orbital_params(des):
 
     except Exception as e:
         return {"error": f"Error parsing API response: {e}"}
+    
 
 # Example of how you would call this function:
 # params_eros = get_orbital_params('Eros') 
