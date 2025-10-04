@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
+from utils import api_new
 
 app = Flask(__name__)
 CORS(app)
@@ -16,23 +17,23 @@ def neo_data():
     # parse the content for key info: filters, api to request
     # ...
     
+    # TODO: use the backend data to return in jsonify format
     # use the nasa_api.py
-    def
+    #return jsonify({'data': data})
+    return jsonify({'message': 'nothing yet'})
 
-    return jsonify({'data': data})
 
+#@app.route('/stats/<des>')
+def get_neo_des():
+    pass
 
-import requests
-import json # You'll need requests for the API call
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
-API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
 
-# Note: The @app.route decorator implies a web framework (like Flask/Django). 
-# This completed function provides the necessary data retrieval logic.
-@app.route('/orbital_params/<string:des>'', methods=['GET']) 
-def get_orbital_params(des):
+
+@app.route('/orbital_params/<des>', methods=['GET']) 
+def get_orbital_params(des: str):
     """
     Retrieves the six Keplerian orbital elements for a given designation (des).
 
@@ -45,6 +46,7 @@ def get_orbital_params(des):
     
     # --- API Call ---
     # The 'des' query parameter is required to specify the asteroid/NEO.
+    API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
     params = {'des': des}
     
     try:
@@ -82,6 +84,7 @@ def get_orbital_params(des):
 
     except Exception as e:
         return {"error": f"Error parsing API response: {e}"}
+    
 
 # Example of how you would call this function:
 # params_eros = get_orbital_params('Eros') 
