@@ -52,10 +52,10 @@ def get_asteroid_data(limit=10):
         distance = approach[indices['dist']] # in Astronomical Units (au)
         velocity = approach[indices['v_inf']] # in km/s
         
-        # --- SBDB API call for Diameter ---
+        # --- SBDB API call for Physical Parameters (including absolute magnitude) ---
         sbdb_params = {
             "sstr": name,
-            "field": "diameter" # Explicitly request the diameter
+            "phys-par": "true"  # Request physical parameters including absolute magnitude
         }
         
         try:
@@ -63,16 +63,27 @@ def get_asteroid_data(limit=10):
             sbdb_response.raise_for_status()
             sbdb_data = sbdb_response.json()
             
-            # Extract diameter. It's under 'object' -> 'diameter'
-            diameter_km = sbdb_data.get('object', {}).get('diameter')
+            # Extract absolute magnitude (H) from phys_par
+            phys_par = sbdb_data.get('phys_par', [])
+            absolute_magnitude = None
             
-            if diameter_km is not None:
-                diameter = f"{float(diameter_km):.3f} km"
+            for param in phys_par:
+                if param.get('name') == 'H':  # H is the absolute magnitude
+                    absolute_magnitude = float(param.get('value'))
+                    break
+            
+            if absolute_magnitude is not None:
+                # Estimate diameter from absolute magnitude using the formula:
+                # D = 1329 * 10^(-H/5) km (for asteroids)
+                diameter_km = 1329 * (10 ** (-absolute_magnitude / 5))
+                diameter = f"{diameter_km:.3f} km"
             else:
-                diameter = "Unknown"
+                diameter = "Unknown (no H magnitude)"
                 
         except requests.exceptions.RequestException:
             diameter = "N/A" # Handle API or network errors
+        except (ValueError, TypeError):
+            diameter = "Unknown (invalid H magnitude)"
             
         # --- Combine and store the data ---
         results.append({
