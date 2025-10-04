@@ -55,7 +55,7 @@ def get_asteroid_data(limit=10):
         # --- SBDB API call for Diameter ---
         sbdb_params = {
             "sstr": name,
-            "fields": "diameter" # Explicitly request the diameter
+            "field": "diameter" # Explicitly request the diameter
         }
         
         try:
