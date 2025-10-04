@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 from utils import api_new
-
+from asteroid import get_high_risk_asteroid_data
 # set up flask app:
 app = Flask(__name__)
 CORS(app)
@@ -17,7 +17,13 @@ def hello_world():
 def neo_data():
     content = request.json
 
-    impact_probability = content.get('IP')
+    # the filter values
+    ip_min = content.get('ip_min')
+    approach_date = content.get('approach_date')
+    limit = content.get('limit')
+
+
+    
     
     # parse the content for key info: filters, api to request
     # ...
@@ -27,6 +33,8 @@ def neo_data():
     # TODO: Implement NEO data retrieval logic
     
     return jsonify({'data': 'NEO data endpoint - implementation needed'})
+
+
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
