@@ -90,7 +90,7 @@ def get_asteroid_data(limit=10):
             "Name": name,
             "Close Approach Distance": f"{float(distance):.6f} au",
             "Velocity": f"{float(velocity):.3f} km/s",
-            "Diameter": diameter
+            "Diameter": f"diameter"
         })
         
     return results
@@ -124,3 +124,24 @@ if asteroid_list:
         )
 else:
     print("\nCould not retrieve asteroid data.")
+
+def get_sentry_des(impact_probability = 1e-5):
+    sentry_url = ""
+    params = {
+        'all':'1',
+        'ip-min':str(impact_probability)
+    }
+
+    response = requests.get(sentry_url, params = params)
+
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        print(f"Error {response.status_code}")
+    
+    data_list = response.json()['data']
+
+    list_of_des = [row["des"] for row in data_list]
+
+    print(list_of_des)
+
