@@ -1,20 +1,24 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import json
 import requests
 from utils import api_new
 
+# set up flask app:
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route("/api/hello")
 def hello_world():
     return jsonify({'message': "Hello World"})
 
-@app.route('/api/neo')
-def neo_data():
 
+@app.route('/api/neo_data/', methods=['POST'])
+def neo_data():
     content = request.json
+
+    impact_probability = content.get('IP')
+    
     # parse the content for key info: filters, api to request
     # ...
     
