@@ -23,3 +23,10 @@
 ## nice to haves (not near earth objects)
 - [ ] add gamification mode: potentially have a "draft pick" of different NEOs to maximize the damage factor
 - [ ] more advanced animations
+
+
+
+## Data Workflow
+1. Query Sentry for "High Impact Probability" Objects: obtain des, energy, etc.
+2. Use des to query sbdb and cad for more information
+3. Process and combine into good format to pass to react frontend
