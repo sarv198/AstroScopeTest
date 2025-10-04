@@ -140,15 +140,10 @@ def get_high_risk_asteroid_data(limit=10):
     """
     
     # --- 1. FILTER: Get the list of objects with IP > 0 from Sentry API ---
-    # FIX: Explicitly using 'mode=summary'. While this sometimes caused issues, it is the documented 
-    # way to request the risk table and is necessary if the empty-param call is failing.
-    sentry_params = {
-        "mode": "summary"
-    }
-    
-    print("1. Filtering: Fetching up to 100 high-risk objects from Sentry Risk Table (IP > 0)...")
+    # FIX: Removed invalid 'mode=summary' parameter. Sentry API returns data as list of dictionaries.
+    print("1. Filtering: Fetching high-risk objects from Sentry Risk Table (IP > 0)...")
     try:
-        sentry_response = requests.get(SENTRY_URL, params=sentry_params)
+        sentry_response = requests.get(SENTRY_URL)
         sentry_response.raise_for_status() 
         sentry_data = sentry_response.json()
     except requests.exceptions.RequestException as e:
@@ -160,16 +155,17 @@ def get_high_risk_asteroid_data(limit=10):
         print("Sentry API returned an empty list. No objects currently pose a high impact risk.")
         return []
 
-    # Map Sentry fields once
-    sentry_fields = sentry_data.get('fields', [])
-    sentry_indices = {field: i for i, field in enumerate(sentry_fields)}
-    
-    # Verify that the essential fields for risk data are present
-    required_sentry_fields = ['des', 'ip', 'energy']
-    if not all(field in sentry_indices for field in required_sentry_fields):
-         # This error indicates a non-standard response from Sentry, even if status code was 200.
-         print(f"Sentry API response format error: Missing required fields {required_sentry_fields}. Available fields: {sentry_fields}", file=sys.stderr)
-         return []
+    # Sentry API returns data as list of dictionaries, not arrays
+    # Verify that the essential fields for risk data are present in the first item
+    if sentry_list and isinstance(sentry_list[0], dict):
+        required_sentry_fields = ['des', 'ip', 'diameter']
+        available_fields = list(sentry_list[0].keys())
+        if not all(field in available_fields for field in required_sentry_fields):
+            print(f"Sentry API response format error: Missing required fields {required_sentry_fields}. Available fields: {available_fields}", file=sys.stderr)
+            return []
+    else:
+        print("Sentry API response format error: Expected list of dictionaries", file=sys.stderr)
+        return []
 
     results = []
     
@@ -180,77 +176,52 @@ def get_high_risk_asteroid_data(limit=10):
         if len(results) >= limit:
             break
             
-        # Extract risk data from the Sentry list item
-        # We must assume the field order from 'sentry_fields' is correct
-        name = item[sentry_indices['des']]
-        cumulative_prob = item[sentry_indices['ip']]
-        kinetic_energy_mt = item[sentry_indices['energy']] 
+        # Extract risk data from the Sentry list item (dictionary format)
+        name = item.get('des')
+        cumulative_prob = item.get('ip')
+        diameter_km = item.get('diameter')  # Diameter is already available from Sentry 
 
-        # --- 2A. CAD API call for Close Approach Details (Distance & Velocity) ---
-        distance = "N/A"
-        velocity = "N/A"
+        # --- 2A. Get velocity from Sentry and distance from SBDB ---
+        # Velocity is available directly from Sentry API
+        velocity_km_s = item.get('v_inf')
+        if velocity_km_s is not None:
+            velocity = f"{float(velocity_km_s):.3f} km/s"
+        else:
+            velocity = "N/A"
         
+        # Get MOID (Minimum Orbit Intersection Distance) from SBDB API
+        distance = "N/A"
         try:
-            cad_params = {"des": name, "date-min": "now", "limit": 1}
-            cad_response = requests.get(CAD_URL, params=cad_params, timeout=5)
-            cad_response.raise_for_status()
-            cad_data = cad_response.json()
+            sbdb_params = {"sstr": name}
+            sbdb_response = requests.get(SBDB_URL, params=sbdb_params, timeout=5)
+            sbdb_response.raise_for_status()
+            sbdb_data = sbdb_response.json()
             
-            fields = cad_data.get('fields', [])
-            indices = {field: i for i, field in enumerate(fields)}
-            
-            if cad_data.get('data') and indices.get('dist') is not None and indices.get('v_inf') is not None:
-                approach_data = cad_data['data'][0]
-                dist_val = float(approach_data[indices['dist']])
-                velo_val = float(approach_data[indices['v_inf']])
-                distance = f"{dist_val:.6f} au"
-                velocity = f"{velo_val:.3f} km/s"
+            orbit_data = sbdb_data.get('orbit', {})
+            moid_au = orbit_data.get('moid')
+            if moid_au is not None:
+                distance = f"{float(moid_au):.6f} au (MOID)"
             
         except requests.exceptions.RequestException:
             pass 
 
-        # --- 2B. SBDB API call for Diameter (via H magnitude) ---
-        diameter = "N/A"
-        try:
-            sbdb_params = {"sstr": name, "phys-par": "true"}
-            sbdb_response = requests.get(SBDB_URL, params=sbdb_params)
-            sbdb_response.raise_for_status()
-            sbdb_data = sbdb_response.json()
-            
-            phys_par = sbdb_data.get('phys_par', [])
-            absolute_magnitude = None
-            for param in phys_par:
-                if param.get('name') == 'H':
-                    absolute_magnitude = float(param.get('value'))
-                    break
-            
-            if absolute_magnitude is not None:
-                diameter_km = 1329 * (10 ** (-absolute_magnitude / 5))
-                diameter = f"{diameter_km:.3f} km"
-            else:
-                diameter = "Unknown (no H magnitude)"
-                
-        except requests.exceptions.RequestException:
-            diameter = "N/A (SBDB Error)"
-        except (ValueError, TypeError):
-            diameter = "Unknown (invalid H magnitude)"
+        # --- 2B. Format diameter from Sentry data ---
+        if diameter_km is not None:
+            diameter = f"{float(diameter_km):.3f} km"
+        else:
+            diameter = "Unknown"
             
         # --- 3. Format and store the data ---
         
         # Format Impact Probability (guaranteed > 0)
         prob_float = float(cumulative_prob) if cumulative_prob is not None else 0.0
         impact_prob_str = f"{prob_float:.2e}"
-        
-        # Format Kinetic Energy (guaranteed > negligible)
-        energy_float = float(kinetic_energy_mt) if kinetic_energy_mt is not None else 0.0
-        kinetic_energy_str = f"{energy_float:.3f} Mt"
 
         results.append({
             "Name": name,
             "Close Approach Distance": distance,
             "Velocity": velocity,
             "Diameter": diameter,
-            "Kinetic Energy": kinetic_energy_str,
             "Impact Probability": impact_prob_str
         })
         
@@ -260,22 +231,21 @@ def get_high_risk_asteroid_data(limit=10):
 asteroid_list = get_high_risk_asteroid_data(limit=10)
 
 if asteroid_list:
-    print("\n" + "="*140)
+    print("\n" + "="*120)
     print(f"Top {len(asteroid_list)} Asteroids on Sentry Risk Table (Impact Probability > 0)")
-    print("="*140)
+    print("="*120)
 
     # Calculate max width for clean, formatted output
     max_name = max([len(a['Name']) for a in asteroid_list])
     max_dist = max([len(a['Close Approach Distance']) for a in asteroid_list])
     max_velo = max([len(a['Velocity']) for a in asteroid_list])
     max_diam = max([len(a['Diameter']) for a in asteroid_list])
-    max_energy = max([len(a['Kinetic Energy']) for a in asteroid_list])
     max_prob = max([len(a['Impact Probability']) for a in asteroid_list])
 
     # Print header
     header = (
         f"{'Name':<{max_name}} | {'Distance (au)':<{max_dist}} | {'Velocity (km/s)':<{max_velo}} | "
-        f"{'Diameter':<{max_diam}} | {'Kinetic Energy (Mt)':<{max_energy}} | {'Impact Probability':<{max_prob}}"
+        f"{'Diameter':<{max_diam}} | {'Impact Probability':<{max_prob}}"
     )
     print(header)
     print("-" * len(header))
@@ -287,7 +257,6 @@ if asteroid_list:
             f"{item['Close Approach Distance']:<{max_dist}} | "
             f"{item['Velocity']:<{max_velo}} | "
             f"{item['Diameter']:<{max_diam}} | "
-            f"{item['Kinetic Energy']:<{max_energy}} | "
             f"{item['Impact Probability']:<{max_prob}}"
         )
 else:
