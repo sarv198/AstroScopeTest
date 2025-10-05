@@ -2,7 +2,7 @@ import requests
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from asteroid import get_high_risk_asteroid_data
+from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
 # set up flask app:
 
 list_of_des = []
@@ -15,6 +15,9 @@ CORS(app)
 def hello_world():
     return jsonify({'message': "Hello World"})
 
+@app.route("/")
+def base():
+    return "AstroScope"
 
 @app.route('/api/neo_data/', methods=['POST'])
 def neo_data():
@@ -27,9 +30,7 @@ def neo_data():
     #approach_date = content.get('approach_date')
     limit = content.get('limit')
     data = get_high_risk_asteroid_data(limit)
-    
-    for key in data.keys():
-        list_of_des.append(key)
+    data = format_results_to_dictionary(data)
     
     return jsonify({'data':data})
     # parse the content for key info: filters, api to request
