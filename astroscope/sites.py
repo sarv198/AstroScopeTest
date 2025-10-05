@@ -33,3 +33,7 @@ def base():
 def leaderboard():
     data = get_palermo_leaderboard(limit=10)
     return render_template("leaderboard.html", data=data)
+
+@sites.route("/impact_map")
+def legacy_redirect():
+    return redirect("/sim/asteroid-launcher", code=302)

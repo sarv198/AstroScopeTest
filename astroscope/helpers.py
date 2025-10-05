@@ -207,7 +207,7 @@ def get_palermo_leaderboard(limit: int = 10):
         if not vi_info:
             limit+=1
             continue
-        print(vi_info)
+        #print(vi_info)
 
 
 

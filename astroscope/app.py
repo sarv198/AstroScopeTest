@@ -25,13 +25,15 @@ def create_app():
     # register Blueprint containing routes
     from sites import sites
     from api import api
+    from sim import sim
 
     app.register_blueprint(sites)
     app.register_blueprint(api)
-
+    app.register_blueprint(sim)
+    
     return app
 
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
