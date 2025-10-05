@@ -127,34 +127,3 @@ def get_orbital_params():
             return {"error": f"Error parsing API response: {e}"}, 400
     #print(full_response)
     return jsonify(full_response)
-
-
-'''
-DEPRECIATED:
-
-
-@api.route('/neo_stat/', methods=['GET'])
-def neo_stat():
-
-    Grab stats for one object using des. Similar style as neo_data, instead just grabbing data.
-    Use cache to grab: any des visible to Frontend should have gone through neo_data, thus cached
-
-    des = request.args.get('des')
-    if not des:
-        return {'error': 'Must include \'des\' argument'}, 400
-
-    result = None
-    for i in range(5):
-        try:
-            result = get_neo_data_single(des)
-            break
-        except Exception as e:
-            print(f'Exception Occured {e}')
-            print("Retrying...")
-
-    if not result:
-        return {'error': 'Exceptions occurred, check stdout for more info'}, 400
-    
-    return jsonify(result)
-
-'''
