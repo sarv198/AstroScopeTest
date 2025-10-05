@@ -91,15 +91,15 @@ function init() {
                 // Set camera offset based on the scaled radius
                 desiredCameraOffset.set(0, targetRadius * 40, targetRadius * 100);
             }
-            if (clickedObject.userData.key && celestialObjects.neo[clickedObject.userData.key]) {
-                targetObject = celestialObjects.neo[clickedObject.userData.key].group;
+            // Handle NEO clicks
+            if (clickedObject.userData && clickedObject.userData.designation) {
+                targetObject = clickedObject.parent; // Focus on the asteroid group
                 populateStatsPanel();
-                const targetRadius = currentScale.size(planetaryData[clickedObject.userData.key].diameter) / 2;
-                // Set camera offset based on the scaled radius
-                desiredCameraOffset.set(0, targetRadius * 40, targetRadius * 100);
+                // Set camera offset for NEOs
+                desiredCameraOffset.set(0, 5, 10); // Fixed small offset for tiny NEOs
             }
-            // NEOs don't have detailed info, but we can still focus on them.
-            else if (clickedObject.userData.a) {
+            // Legacy NEO handling (fallback)
+            else if (clickedObject.userData && clickedObject.userData.a) {
                 targetObject = clickedObject;
                 desiredCameraOffset.set(0, 5, 10); // Fixed small offset for tiny NEOs
             }
@@ -218,27 +218,134 @@ function createPlanets() {
     updateScales();
 }
 
-function createNEOs() {
-    const neoCount = 150, neosGroup = new THREE.Group();
+async function createNEOs() {
+    const neosGroup = new THREE.Group();
     neosGroup.name = "NEOs"; neosGroup.userData.key = "neos";
-    for (let i = 0; i < neoCount; i++) {
-        // Increased base size for Enhanced mode visibility (Radius 0.5 to 2.0)
-        const enhancedRadius = Math.random() * 1.5 + 0.5;
+    
+    try {
+        // Step 1: Fetch NEO data from Flask backend
+        console.log("Fetching NEO data from backend...");
+        const response = await fetch('/api/neo_data/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ limit: 20 }) // Limit to 20 for performance
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const neoData = await response.json();
+        console.log("NEO data received:", neoData);
+        
+        // Step 2: Extract list of designations
+        const designations = neoData.list_of_des || [];
+        console.log(`Found ${designations.length} asteroid designations`);
+        
+        if (designations.length === 0) {
+            console.warn("No asteroid designations found");
+            scene.add(neosGroup);
+            celestialObjects.neos = { group: neosGroup };
+            return;
+        }
+        
+        // Step 3: Query orbital parameters for each designation
+        const orbitalParamsUrl = `/api/orbital_params/?${designations.map(des => `des=${encodeURIComponent(des)}`).join('&')}`;
+        console.log("Fetching orbital parameters...");
+        
+        const orbitalResponse = await fetch(orbitalParamsUrl);
+        if (!orbitalResponse.ok) {
+            throw new Error(`Orbital params HTTP error! status: ${orbitalResponse.status}`);
+        }
+        
+        const orbitalData = await orbitalResponse.json();
+        console.log("Orbital data received:", orbitalData);
+        
+        // Step 4: Create orbital paths and asteroid markers
+        let createdCount = 0;
+        for (const des of designations) {
+            if (orbitalData[des] && orbitalData[des].length > 0) {
+                const orbitPoints = orbitalData[des];
+                createAsteroidOrbit(des, orbitPoints, neosGroup, neoData.data[des]);
+                createdCount++;
+            }
+        }
+        
+        console.log(`Created ${createdCount} asteroid orbits out of ${designations.length} designations`);
+        
+    } catch (error) {
+        console.error("Error loading real NEO data:", error);
+        // Fallback to creating a few fake NEOs if real data fails
+        console.log("Creating fallback fake NEOs...");
+        createFallbackNEOs(neosGroup);
+    }
+    
+    scene.add(neosGroup);
+    celestialObjects.neos = { group: neosGroup };
+}
 
-        // NEO meshes are now red (0xcc3333) and use the larger enhancedRadius
-        const neo = new THREE.Mesh(new THREE.DodecahedronGeometry(enhancedRadius, 0),
-            new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.8, metalness: 0.2 }));
+function createAsteroidOrbit(designation, orbitPoints, parentGroup, neoInfo) {
+    // Create orbital path geometry
+    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+    const orbitMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x87CEEB, // Light blue
+        opacity: 0.6,
+        transparent: true
+    });
+    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+    orbitLine.name = `${designation} Orbit`;
+    
+    // Create asteroid marker
+    const enhancedRadius = 0.8; // Base size for visibility
+    const asteroid = new THREE.Mesh(
+        new THREE.SphereGeometry(enhancedRadius, 8, 6),
+        new THREE.MeshStandardMaterial({ 
+            color: 0xcc3333, 
+            roughness: 0.8, 
+            metalness: 0.2 
+        })
+    );
+    asteroid.name = designation;
+    asteroid.userData = {
+        key: designation,
+        designation: designation,
+        enhancedRadius: enhancedRadius,
+        neoInfo: neoInfo || {}
+    };
+    
+    // Position asteroid at first point of orbit
+    if (orbitPoints.length > 0) {
+        asteroid.position.copy(orbitPoints[0]);
+    }
+    
+    // Create a group for this asteroid and its orbit
+    const asteroidGroup = new THREE.Group();
+    asteroidGroup.name = `${designation} Group`;
+    asteroidGroup.add(asteroid);
+    asteroidGroup.add(orbitLine);
+    
+    parentGroup.add(asteroidGroup);
+    
+    console.log(`Created orbit for ${designation}`);
+}
+
+function createFallbackNEOs(neosGroup) {
+    // Fallback function to create fake NEOs if real data fails
+    const neoCount = 10;
+    for (let i = 0; i < neoCount; i++) {
+        const enhancedRadius = Math.random() * 1.5 + 0.5;
+        const neo = new THREE.Mesh(
+            new THREE.DodecahedronGeometry(enhancedRadius, 0),
+            new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.8, metalness: 0.2 })
+        );
 
         const a_au = Math.random() * 3 + 0.5, e = Math.random() * 0.7 + 0.1, inc = Math.random() * 20, M0 = Math.random() * 360;
         const Omega = Math.random() * 360, varpi = Math.random() * 360;
         const period = Math.sqrt(a_au ** 3) * 365.25;
 
-        // Store the base size for reference and orbital data
         neo.userData = { a: a_au, e, i: inc, L: (M0 + varpi) % 360, varpi, Omega, orbitalPeriod: period, enhancedRadius };
         neosGroup.add(neo);
     }
-    scene.add(neosGroup);
-    celestialObjects.neos = { group: neosGroup };
 }
 
 function createStars() {
@@ -300,9 +407,25 @@ function setLabelsVisible(visible) { Object.keys(planetaryData).forEach(key => {
 function setPlanetVisible(visible) { Object.keys(planetaryData).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].group.visible = visible; }); }
 function setPlanetTraVisible(visible) { Object.keys(planetaryData).forEach(key => { if (celestialObjects[key] && celestialObjects[key].orbit) celestialObjects[key].orbit.visible = visible; }); }
 function setNEOVisible(visible) {
-    Object.keys({ neos: { name: "NEOs" } }).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].group.visible = visible; });
+    if (celestialObjects.neos && celestialObjects.neos.group) {
+        celestialObjects.neos.group.children.forEach(neoGroup => {
+            if (neoGroup.children && neoGroup.children.length > 0) {
+                const asteroid = neoGroup.children.find(child => child.userData && child.userData.enhancedRadius);
+                if (asteroid) asteroid.visible = visible;
+            }
+        });
+    }
 }
-function setNEOTraVisible(visible) { Object.keys({ neos: { name: "NEOs" } }).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].orbit.visible = visible; }); }
+function setNEOTraVisible(visible) {
+    if (celestialObjects.neos && celestialObjects.neos.group) {
+        celestialObjects.neos.group.children.forEach(neoGroup => {
+            if (neoGroup.children && neoGroup.children.length > 0) {
+                const orbitLine = neoGroup.children.find(child => child.name && child.name.includes('Orbit'));
+                if (orbitLine) orbitLine.visible = visible;
+            }
+        });
+    }
+}
 function formatTimeSpeed(speed) { if (speed < 60) return `${speed.toFixed(1)} sec/sec`; if (speed < 3600) return `${(speed / 60).toFixed(1)} min/sec`; if (speed < 86400) return `${(speed / 3600).toFixed(1)} hours/sec`; if (speed < 86400 * 30.44) return `${(speed / 86400).toFixed(1)} days/sec`; if (speed < 86400 * 365.25) return `${(speed / (86400 * 30.44)).toFixed(1)} months/sec`; return `${(speed / (86400 * 365.25)).toFixed(1)} years/sec`; }
 function displayInfo(data) { document.getElementById('info-title').textContent = data.name; document.getElementById('info-content').innerHTML = `<div class="info-item"><span class="info-label">Diameter</span><span class="info-value">${data.diameter.toLocaleString()} km</span></div><div class="info-item"><span class="info-label">Orbital Period</span><span class="info-value">${data.orbitalPeriod.toFixed(2)} days</span></div><div class="info-item"><span class="info-label">Rotation Period</span><span class="info-value">${Math.abs(data.rotationPeriod)} hours</span></div><div class="info-item"><span class="info-label">Axial Tilt</span><span class="info-value">${data.obliquity}°</span></div><div class="info-item"><span class="info-label">Eccentricity</span><span class="info-value">${data.e}</span></div>`; document.getElementById('info-panel').style.display = 'block'; document.getElementById('stats-panel').style.display = 'none'; }
 
@@ -342,19 +465,24 @@ function updateScales() {
 
     // NEO SCALING
     if (celestialObjects.neos && celestialObjects.neos.group) {
-        celestialObjects.neos.group.children.forEach(neo => {
-            const data = neo.userData;
-            if (scaleMode === 'enhanced') {
-                // In Enhanced mode, the geometry is already sized correctly, so we set the scale back to 1.
-                neo.scale.setScalar(1);
-            } else if (scaleMode === 'true') {
-                // In True Scale mode, we scale them down significantly to a representative 1km size.
-                const TRUE_NEO_DIAMETER_KM = 1;
-                const scaledTrueRadius = trueScale.size(TRUE_NEO_DIAMETER_KM) / 2;
+        celestialObjects.neos.group.children.forEach(neoGroup => {
+            if (neoGroup.children && neoGroup.children.length > 0) {
+                const asteroid = neoGroup.children.find(child => child.userData && child.userData.enhancedRadius);
+                if (asteroid && asteroid.userData) {
+                    const data = asteroid.userData;
+                    if (scaleMode === 'enhanced') {
+                        // In Enhanced mode, the geometry is already sized correctly, so we set the scale back to 1.
+                        asteroid.scale.setScalar(1);
+                    } else if (scaleMode === 'true') {
+                        // In True Scale mode, we scale them down significantly to a representative 1km size.
+                        const TRUE_NEO_DIAMETER_KM = 1;
+                        const scaledTrueRadius = trueScale.size(TRUE_NEO_DIAMETER_KM) / 2;
 
-                // Scale factor = (Target True Radius) / (Current Enhanced Radius)
-                const scaleFactor = scaledTrueRadius / data.enhancedRadius;
-                neo.scale.setScalar(scaleFactor);
+                        // Scale factor = (Target True Radius) / (Current Enhanced Radius)
+                        const scaleFactor = scaledTrueRadius / data.enhancedRadius;
+                        asteroid.scale.setScalar(scaleFactor);
+                    }
+                }
             }
         });
     }
@@ -367,7 +495,15 @@ function updatePositions(elapsedTime) {
     const daysSinceJ2000 = (simulationTime.getTime() - J2000.getTime()) / 86400000;
 
     // Collect all bodies (planets and NEOs) for position update
-    const neoDataList = celestialObjects.neos.group.children.map((neo, i) => neo.userData);
+    let neoDataList = [];
+    if (celestialObjects.neos && celestialObjects.neos.group) {
+        // Extract NEO data from the new group structure
+        neoDataList = celestialObjects.neos.group.children
+            .filter(child => child.children && child.children.length > 0)
+            .map(neoGroup => neoGroup.children.find(child => child.userData && child.userData.enhancedRadius))
+            .filter(neo => neo && neo.userData)
+            .map(neo => neo.userData);
+    }
     const allBodies = { ...planetaryData, ...Object.fromEntries(neoDataList.map((data, i) => [`neo_${i}`, data])) };
 
     Object.keys(allBodies).forEach(key => {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System Simulator</title>
+    <title>Astroscope</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" type="image/x-icon" href="favicon-nasa.png">
+
 
 </head>
 
@@ -65,7 +67,7 @@
         </div>
         <div id="stats-content"></div>
     </div>
-    
+
 
     <div id="info-panel" class="ui-panel">
         <div class="info-header">
@@ -79,15 +81,50 @@
         <button id="play-pause-btn" class="button play-pause">&#10074;&#10074;</button>
         <button id="time-forward-btn" class="button">&gt;&gt;</button>
     </div>
-    <div class="control-group">
-    <button id="impact-map-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Impact Map
-    </button>
 
-    <button id="leaderboard-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Palermo Scale Leaderboard
-    </button>
+    <div class="menu-buttons-container">
+        <button id="impact-map-btn" class="menu-button">
+            View Impact Map
+        </button>
+
+        <button id="leaderboard-btn" class="menu-button">
+            View Palermo Scale Leaderboard
+        </button>
     </div>
+
+    <style>
+        .menu-buttons-container {
+            /* Positioning for horizontal centering and moving to the top */
+            position: absolute;
+            top: 20px;
+            /* Shifted to the right by adding ' + 5px' to the centering calculation */
+            left: calc(50% + 5px);
+            transform: translateX(-50%);
+            /* Flex properties for side-by-side layout and spacing */
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .menu-button {
+            /* Custom styles for smaller, transparent, borderless buttons */
+            background-color: transparent !important;
+            color: #c9d1d9;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+    </style>
+
 
     <script>
     document.getElementById("impact-map-btn").addEventListener("click", () => {
