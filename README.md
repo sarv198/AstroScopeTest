@@ -5,6 +5,7 @@ Team Numbercrunchers for NASA Space Apps
 ## To Run Locally:
 ``
 cd astroscope
+
 python3 run.py
 ``
 
