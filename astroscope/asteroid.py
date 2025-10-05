@@ -131,7 +131,7 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
     return final_dict
 
 '''
-# TESTING CODE
+# TESTING and DEPRECIATED CODE
 asteroid_list = get_high_risk_asteroid_data(limit=10)
 
 if asteroid_list:

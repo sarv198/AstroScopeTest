@@ -1,6 +1,6 @@
 import requests
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, redirect
 from flask_cors import CORS
 from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
 from orbit import orbital_elements_to_3d_points
@@ -30,6 +30,10 @@ def impact_map():
     print(path)
     return send_from_directory('static', path=path)
 
+@app.route('/')
+def base():
+    return redirect('/main')
+
 @app.route('/api/neo_data/', methods=['POST'])
 def neo_data():
     content = request.json
@@ -47,9 +51,14 @@ def neo_data():
     # parse the content for key info: filters, api to request
 
 
-
 #@app.route('/api/neo_stat/<des>', methods=['POST'])
 def neo_stat(des):
+    '''
+    Grab stats for one object using des. Similar style as neo_data, instead just grabbing data.
+    Use cache to grab: any des visible to Frontend should have gone through neo_data, thus cached
+    '''
+
+    
     pass
 
 # Define the six required Keplerian element short names
