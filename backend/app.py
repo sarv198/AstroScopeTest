@@ -3,7 +3,7 @@ import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
-from orbit import orbital_elements_to_ellipsecurve
+from orbit import orbital_elements_to_3d_points
 # set up flask app:
 
 list_of_des = []

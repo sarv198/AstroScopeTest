@@ -16,15 +16,15 @@ const TRUE_SCALE_KM_PER_UNIT = 10000000;
 
 // Orbital and Physical Data
 const planetaryData = {
-    mercury: { name: "Mercury", diameter: 4879, rotationPeriod: 1407.6, obliquity: 0.034, texture: 'https://i.imgur.com/k2AxttG.jpeg', a: 0.387098, e: 0.205630, i: 7.005, L: 252.25084, varpi: 77.45645, Omega: 48.33167, orbitalPeriod: 87.9691 },
-    venus: { name: "Venus", diameter: 12104, rotationPeriod: -5832.5, obliquity: 177.4, texture: 'https://i.imgur.com/83Ue0v3.jpeg', a: 0.723332, e: 0.006772, i: 3.395, L: 181.97973, varpi: 131.53298, Omega: 76.68069, orbitalPeriod: 224.701 },
-    earth: { name: "Earth", diameter: 12756, rotationPeriod: 23.9345, obliquity: 23.439, texture: 'https://i.imgur.com/GSA7sIs.jpeg', cloudTexture: 'https://i.imgur.com/wFDwm94.png', a: 1.000002, e: 0.016708, i: 0.000, L: 100.46435, varpi: 102.94719, Omega: 0.0, orbitalPeriod: 365.256 },
-    mars: { name: "Mars", diameter: 6792, rotationPeriod: 24.6229, obliquity: 25.19, texture: 'https://i.imgur.com/XC0ZU2B.jpeg', a: 1.523679, e: 0.09340, i: 1.850, L: 355.45332, varpi: 336.04084, Omega: 49.57854, orbitalPeriod: 686.980 },
-    jupiter: { name: "Jupiter", diameter: 142984, rotationPeriod: 9.925, obliquity: 3.13, texture: 'https://i.imgur.com/9N4p4zJ.jpeg', a: 5.2044, e: 0.0489, i: 1.303, L: 34.3964, varpi: 14.7284, Omega: 100.492, orbitalPeriod: 4332.59 },
-    saturn: { name: "Saturn", diameter: 120536, rotationPeriod: 10.656, obliquity: 26.73, texture: 'https://i.imgur.com/sCC3aWk.jpeg', ringTexture: 'https://i.imgur.com/6Y2V2ug.png', a: 9.5826, e: 0.0565, i: 2.485, L: 49.94432, varpi: 92.5988, Omega: 113.665, orbitalPeriod: 10759.22 },
-    uranus: { name: "Uranus", diameter: 51118, rotationPeriod: -17.24, obliquity: 97.77, texture: 'https://i.imgur.com/uG5CcE0.jpeg', a: 19.2294, e: 0.0457, i: 0.772, L: 313.23218, varpi: 170.96424, Omega: 74.22988, orbitalPeriod: 30688.5 },
-    neptune: { name: "Neptune", diameter: 49528, rotationPeriod: 16.11, obliquity: 28.32, texture: 'https://i.imgur.com/3q1s7iL.jpeg', a: 30.10366, e: 0.0113, i: 1.769, L: 304.88003, varpi: 44.97135, Omega: 131.72169, orbitalPeriod: 60182 },
-    pluto: { name: "Pluto", diameter: 2376, rotationPeriod: -153.3, obliquity: 122.5, texture: 'https://i.imgur.com/ncl8a6f.jpeg', a: 39.482, e: 0.2488, i: 17.16, L: 238.9288, varpi: 224.06676, Omega: 110.30347, orbitalPeriod: 90560 }
+    mercury: { name: "Mercury", diameter: 4879, rotationPeriod: 1407.6, obliquity: 0.034, texture: 'assets/textures/mercury.jpg', a: 0.387098, e: 0.205630, i: 7.005, L: 252.25084, varpi: 77.45645, Omega: 48.33167, orbitalPeriod: 87.9691 },
+    venus: { name: "Venus", diameter: 12104, rotationPeriod: -5832.5, obliquity: 177.4, texture: 'assets/textures/venus.jpg', a: 0.723332, e: 0.006772, i: 3.395, L: 181.97973, varpi: 131.53298, Omega: 76.68069, orbitalPeriod: 224.701 },
+    earth: { name: "Earth", diameter: 12756, rotationPeriod: 23.9345, obliquity: 23.439, texture: 'assets/textures/earth.jpg', cloudTexture: 'assets/textures/earth-cloud.jpg', a: 1.000002, e: 0.016708, i: 0.000, L: 100.46435, varpi: 102.94719, Omega: 0.0, orbitalPeriod: 365.256 },
+    mars: { name: "Mars", diameter: 6792, rotationPeriod: 24.6229, obliquity: 25.19, texture: 'assets/textures/mars.jpg', a: 1.523679, e: 0.09340, i: 1.850, L: 355.45332, varpi: 336.04084, Omega: 49.57854, orbitalPeriod: 686.980 },
+    jupiter: { name: "Jupiter", diameter: 142984, rotationPeriod: 9.925, obliquity: 3.13, texture: 'assets/textures/jupiter.jpg', a: 5.2044, e: 0.0489, i: 1.303, L: 34.3964, varpi: 14.7284, Omega: 100.492, orbitalPeriod: 4332.59 },
+    saturn: { name: "Saturn", diameter: 120536, rotationPeriod: 10.656, obliquity: 26.73, texture: 'assets/textures/saturn.jpg', ringTexture: 'assets/textures/saturn-rings.jpg', a: 9.5826, e: 0.0565, i: 2.485, L: 49.94432, varpi: 92.5988, Omega: 113.665, orbitalPeriod: 10759.22 },
+    uranus: { name: "Uranus", diameter: 51118, rotationPeriod: -17.24, obliquity: 97.77, texture: 'assets/textures/uranus.jpg', a: 19.2294, e: 0.0457, i: 0.772, L: 313.23218, varpi: 170.96424, Omega: 74.22988, orbitalPeriod: 30688.5 },
+    neptune: { name: "Neptune", diameter: 49528, rotationPeriod: 16.11, obliquity: 28.32, texture: 'assets/textures/neptune.jpg', a: 30.10366, e: 0.0113, i: 1.769, L: 304.88003, varpi: 44.97135, Omega: 131.72169, orbitalPeriod: 60182 },
+    pluto: { name: "Pluto", diameter: 2376, rotationPeriod: -153.3, obliquity: 122.5, texture: 'assets/textures/saturn-map.jpg', a: 39.482, e: 0.2488, i: 17.16, L: 238.9288, varpi: 224.06676, Omega: 110.30347, orbitalPeriod: 90560 }
 };
 const celestialObjects = {};
 let scaleMode = 'enhanced';
@@ -49,8 +49,18 @@ let currentScale = enhancedScale;
 // Loading Manager for UI
 const loadingManager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(loadingManager);
+const scaleFactor = currentScale.distance(1.0);
 loadingManager.onLoad = () => { setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; document.getElementById('loading-screen').addEventListener('transitionend', () => document.getElementById('loading-screen').style.display = 'none'); }, 500); };
 loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElementById('loading-bar').style.width = (itemsLoaded / itemsTotal) * 100 + '%'; };
+
+
+// Asteroid orbit data
+const retrievedOrbitsData = [
+    // Example 1: Use the result from your Python script example 
+    // a=1.0, e=0.3, i_deg=10, RAAN_deg=40, argp_deg=60
+    // Note: This would contain actual orbit data from your Python script
+    // For now, we'll leave it empty to prevent errors
+];
 
 function init() {
     scene = new THREE.Scene();
@@ -65,7 +75,18 @@ function init() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-    createSun(); createPlanets(); createNEOs(); createStars();
+
+    createSun(); 
+    createPlanets(); 
+
+    retrievedOrbitsData.forEach((params, index) => {
+        // Note: This would draw retrieved orbit data from your Python script
+        // For now, we'll skip this since we don't have actual orbit data loaded
+        // drawRetrieved3DOrbit(pointsArray, scaleFactor, 0xffcc00, `Retrieved Orbit ${index + 1}`);
+    });
+
+    createNEOs(); 
+    createStars();
     setupUI();
 
     // Raycaster for object picking
@@ -105,7 +126,7 @@ function init() {
 function createSun() {
     // FIX: Use unit geometry and apply scale in updateScales for consistency
     const sunGeometry = new THREE.SphereGeometry(1, 64, 64);
-    const sunMaterial = new THREE.MeshBasicMaterial({ map: textureLoader.load('https://i.imgur.com/DHsFv4V.jpeg'), color: 0xffddaa });
+    const sunMaterial = new THREE.MeshBasicMaterial({ map: textureLoader.load('assets/textures/sun.jpg'), color: 0xffddaa });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.name = "Sun";
     sun.userData.key = 'sun';
@@ -211,67 +232,29 @@ function createPlanets() {
 }
 
 /**
- * Creates a 2D orbit path in the Ecliptic (XY) plane using parameters derived
- * from the external orbital_elements_to_ellipsecurve script and adds it to the scene.
- *
- * @param {object} orbitParams - The dictionary returned by the Python script:
- * {aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation, aClockwise}
- * @param {string} color - The hexadecimal color for the orbit line.
- * @param {string} name - A name for the orbit group.
- * @returns {THREE.Group} The group containing the orbit path.
+ * Draws the orbit as a 3D Line from an array of XYZ coordinates.
+ * @param {Array<number>} pointsArray - Flat array of [x1, y1, z1, x2, y2, z2, ...]
+ * @param {number} scaleFactor - The distance scale factor (from currentScale.distance(1.0))
  */
-function drawRetrievedOrbit(orbitParams, color = 0xcc3333, name = "Retrieved Orbit") {
-    // 1. Create the Ellipse Curve using the calculated parameters.
-    // NOTE: Three.js EllipseCurve is defined in the XY plane by default.
-    const curve = new THREE.EllipseCurve(
-        orbitParams.aX,      // aX
-        orbitParams.aY,      // aY
-        orbitParams.xRadius, // xRadius
-        orbitParams.yRadius, // yRadius
-        orbitParams.aStartAngle, // aStartAngle (0)
-        orbitParams.aEndAngle,   // aEndAngle (2*PI)
-        orbitParams.aClockwise,  // aClockwise (false)
-        orbitParams.aRotation    // aRotation (angle of the major axis)
-    );
+function drawRetrieved3DOrbit(pointsArray, scaleFactor, color = 0xffcc00, name = "3D Orbit") {
+    const scaledPoints = [];
+    for (let i = 0; i < pointsArray.length; i += 3) {
+        // Apply scaling to the coordinates
+        const x = pointsArray[i] * scaleFactor;
+        const y = pointsArray[i + 1] * scaleFactor;
+        const z = pointsArray[i + 2] * scaleFactor;
+        
+        // Map ECI (X, Y, Z) to Three.js World (X, Z, -Y)
+        scaledPoints.push(new THREE.Vector3(x, z, -y));
+    }
 
-    // 2. Generate points for the orbit line.
-    const points = curve.getPoints(300); // Increased points for smoother curve
-
-    // 3. Transform the 2D (X, Y) points to the 3D Three.js World (X, Z, -Y)
-    // Your Python script projects the 3D orbit onto the XY plane (Ecliptic).
-    // In your scene setup, the Ecliptic plane is **X-Z** (since you map `p.y` to `-p.z`).
-    const transformedPoints = points.map(p => new THREE.Vector3(p.x, 0, -p.y));
-
-    // 4. Create the Orbit Line object.
-    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(transformedPoints);
+    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(scaledPoints);
     const orbitMaterial = new THREE.LineBasicMaterial({ color: color });
     const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
 
-    // 5. Create a Group and add the line.
-    // The rotation (aRotation) is already factored into the EllipseCurve's points
-    // via the aRotation parameter, so no additional rotation is needed on the group.
     const orbitGroup = new THREE.Group();
     orbitGroup.add(orbitLine);
     orbitGroup.name = name;
-    orbitGroup.userData.isCustomOrbit = true; // For potential visibility controls
-    
-    // Set a position for the orbit center (already included in aX, aY, but keeps objects grouped)
-    // The points are already offset by aX/aY, so the group position is (0,0,0).
-    
-    // 6. Add a small dot to represent the object's current position (at the start of the orbit for simplicity)
-    const objectDot = new THREE.Mesh(
-        new THREE.SphereGeometry(2, 8, 8), // Small size, adjust as needed
-        new THREE.MeshBasicMaterial({ color: color })
-    );
-    // The first point in the orbit is where the object is assumed to be at t=0
-    objectDot.position.copy(transformedPoints[0]);
-    objectDot.name = name + " Object";
-    objectDot.userData.isCustomObject = true;
-    objectDot.userData.aX = orbitParams.aX; // Store for potential future movement
-    objectDot.userData.aY = orbitParams.aY;
-
-    orbitGroup.add(objectDot);
-    
     scene.add(orbitGroup);
     return orbitGroup;
 }
