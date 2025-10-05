@@ -49,6 +49,7 @@ let currentScale = enhancedScale;
 // Loading Manager for UI
 const loadingManager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(loadingManager);
+const scaleFactor = currentScale.distance(1.0);
 loadingManager.onLoad = () => { setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; document.getElementById('loading-screen').addEventListener('transitionend', () => document.getElementById('loading-screen').style.display = 'none'); }, 500); };
 loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElementById('loading-bar').style.width = (itemsLoaded / itemsTotal) * 100 + '%'; };
 
@@ -57,9 +58,7 @@ loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElem
 const retrievedOrbitsData = [
     // Example 1: Use the result from your Python script example 
     // a=1.0, e=0.3, i_deg=10, RAAN_deg=40, argp_deg=60
-    { aX: 0.052, aY: -0.016, xRadius: 1.011, yRadius: 0.947, aStartAngle: 0, aEndAngle: 6.283, aClockwise: false, aRotation: 3.12 },
-    // Example 2: A highly inclined, smaller orbit
-    { aX: -0.05, aY: 0.1, xRadius: 0.5, yRadius: 0.45, aStartAngle: 0, aEndAngle: 6.283, aClockwise: false, aRotation: 0.8 },
+    {"object1": points},
 ];
 
 function init() {
@@ -80,8 +79,7 @@ function init() {
     createPlanets(); 
 
     retrievedOrbitsData.forEach((params, index) => {
-        const scaledParams = scaleOrbitParams(params);
-        drawRetrievedOrbit(scaledParams, 0xffcc00, `Retrieved Orbit ${index + 1}`);
+        drawRetrieved3DOrbit(pointsArray, scaleFactor, 0xffcc00, `Retrieved Orbit ${index + 1}`);
     });
 
     createNEOs(); 
@@ -256,22 +254,6 @@ function drawRetrieved3DOrbit(pointsArray, scaleFactor, color = 0xffcc00, name =
     orbitGroup.name = name;
     scene.add(orbitGroup);
     return orbitGroup;
-}
-
-// Function to scale the AU-based output of \ Python script
-function scaleOrbitParams(params) {
-    const scaleFactor = currentScale.distance(1.0); // Get the scale factor for 1 AU
-
-    return {
-        aX: params.aX * scaleFactor,
-        aY: params.aY * scaleFactor,
-        xRadius: params.xRadius * scaleFactor,
-        yRadius: params.yRadius * scaleFactor,
-        aStartAngle: params.aStartAngle,
-        aEndAngle: params.aEndAngle,
-        aClockwise: params.aClockwise,
-        aRotation: params.aRotation
-    };
 }
 
 function createNEOs() {
