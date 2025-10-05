@@ -1,4 +1,5 @@
 venv
 .env
 __pycache__
-neo_cache
+neo_cache/*
+!neo_cache/.gitkeep

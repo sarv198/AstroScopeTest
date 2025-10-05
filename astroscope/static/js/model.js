@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 let scene, camera, renderer, controls;
 let clock = new THREE.Clock();
 let simulationTime = new Date();
@@ -24,7 +25,7 @@ const planetaryData = {
     saturn: { name: "Saturn", diameter: 120536, rotationPeriod: 10.656, obliquity: 26.73, texture: '/static/assets/textures/saturn.jpg', ringTexture: '/static/assets/textures/saturn-rings.jpg', a: 9.5826, e: 0.0565, i: 2.485, L: 49.94432, varpi: 92.5988, Omega: 113.665, orbitalPeriod: 10759.22 },
     uranus: { name: "Uranus", diameter: 51118, rotationPeriod: -17.24, obliquity: 97.77, texture: '/static/assets/textures/uranus.jpg', a: 19.2294, e: 0.0457, i: 0.772, L: 313.23218, varpi: 170.96424, Omega: 74.22988, orbitalPeriod: 30688.5 },
     neptune: { name: "Neptune", diameter: 49528, rotationPeriod: 16.11, obliquity: 28.32, texture: '/static/assets/textures/neptune.jpg', a: 30.10366, e: 0.0113, i: 1.769, L: 304.88003, varpi: 44.97135, Omega: 131.72169, orbitalPeriod: 60182 },
-    pluto: { name: "Pluto", diameter: 2376, rotationPeriod: -153.3, obliquity: 122.5, texture: '/static/assets/textures/saturn-map.jpg', a: 39.482, e: 0.2488, i: 17.16, L: 238.9288, varpi: 224.06676, Omega: 110.30347, orbitalPeriod: 90560 }
+    // pluto: { name: "Pluto", diameter: 2376, rotationPeriod: -153.3, obliquity: 122.5, texture: 'p', a: 39.482, e: 0.2488, i: 17.16, L: 238.9288, varpi: 224.06676, Omega: 110.30347, orbitalPeriod: 90560 }
 };
 const celestialObjects = {};
 let scaleMode = 'enhanced';
@@ -369,6 +370,7 @@ function setupUI() {
     document.getElementById('time-forward-btn').addEventListener('click', () => { slider.value = Math.min(parseInt(slider.value) + 50, 1000); slider.dispatchEvent(new Event('input')); });
     document.getElementById('time-backward-btn').addEventListener('click', () => { slider.value = Math.max(parseInt(slider.value) - 50, 0); slider.dispatchEvent(new Event('input')); });
 
+
     document.getElementById('info-close-btn').addEventListener('click', () => { document.getElementById('info-panel').style.display = 'none'; targetObject = null; });
     document.getElementById('stats-close-btn').addEventListener('click', () => { document.getElementById('stats-panel').style.display = 'none'; targetObject = null; });
     document.getElementById('focus-sun-btn').addEventListener('click', () => { targetObject = celestialObjects.sun.group; desiredCameraOffset.set(0, 100, 250); });
@@ -381,8 +383,8 @@ function setupUI() {
     document.getElementById('planet-tra-off-btn').addEventListener('click', (e) => { setPlanetTraVisible(false); e.target.classList.add('active'); document.getElementById('planet-tra-on-btn').classList.remove('active'); });
     document.getElementById('neo-on-btn').addEventListener('click', (e) => { setNEOVisible(true); e.target.classList.add('active'); document.getElementById('neo-off-btn').classList.remove('active'); });
     document.getElementById('neo-off-btn').addEventListener('click', (e) => { setNEOVisible(false); e.target.classList.add('active'); document.getElementById('neo-on-btn').classList.remove('active'); });
-    document.getElementById('neo-tra-on-btn').addEventListener('click', (e) => { setNEOVisible(true); e.target.classList.add('active'); document.getElementById('neo-tra-off-btn').classList.remove('active'); });
-    document.getElementById('neo-tra-off-btn').addEventListener('click', (e) => { setNEOVisible(false); e.target.classList.add('active'); document.getElementById('neo-tra-on-btn').classList.remove('active'); });
+    document.getElementById('neo-tra-on-btn').addEventListener('click', (e) => { setNEOTraVisible(true); e.target.classList.add('active'); document.getElementById('neo-tra-off-btn').classList.remove('active'); });
+    document.getElementById('neo-tra-off-btn').addEventListener('click', (e) => { setNEOTraVisible(false); e.target.classList.add('active'); document.getElementById('neo-tra-on-btn').classList.remove('active'); });
     populateStatsPanel();
 }
 
@@ -427,7 +429,9 @@ function setNEOTraVisible(visible) {
     }
 }
 function formatTimeSpeed(speed) { if (speed < 60) return `${speed.toFixed(1)} sec/sec`; if (speed < 3600) return `${(speed / 60).toFixed(1)} min/sec`; if (speed < 86400) return `${(speed / 3600).toFixed(1)} hours/sec`; if (speed < 86400 * 30.44) return `${(speed / 86400).toFixed(1)} days/sec`; if (speed < 86400 * 365.25) return `${(speed / (86400 * 30.44)).toFixed(1)} months/sec`; return `${(speed / (86400 * 365.25)).toFixed(1)} years/sec`; }
+
 function displayInfo(data) { document.getElementById('info-title').textContent = data.name; document.getElementById('info-content').innerHTML = `<div class="info-item"><span class="info-label">Diameter</span><span class="info-value">${data.diameter.toLocaleString()} km</span></div><div class="info-item"><span class="info-label">Orbital Period</span><span class="info-value">${data.orbitalPeriod.toFixed(2)} days</span></div><div class="info-item"><span class="info-label">Rotation Period</span><span class="info-value">${Math.abs(data.rotationPeriod)} hours</span></div><div class="info-item"><span class="info-label">Axial Tilt</span><span class="info-value">${data.obliquity}°</span></div><div class="info-item"><span class="info-label">Eccentricity</span><span class="info-value">${data.e}</span></div>`; document.getElementById('info-panel').style.display = 'block'; document.getElementById('stats-panel').style.display = 'none'; }
+
 
 function updateScales() {
     // SUN SCALING
