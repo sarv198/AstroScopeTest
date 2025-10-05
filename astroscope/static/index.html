@@ -13,7 +13,7 @@
     -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
 
     <style>
     </style>
@@ -56,6 +56,7 @@
         <h2 id="stats-title">NEO STATISTICS</h2>
         <div id="stats-content"></div>
     </div>
+    
 
     <div id="info-panel" class="ui-panel">
         <div class="info-header">
@@ -70,7 +71,19 @@
         <button id="time-forward-btn" class="button">&gt;&gt;</button>
     </div>
 
-    <script src="model.js"></script>
+    <div class="control-group">
+    <button id="impact-map-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
+        View Impact Map
+    </button>
+    </div>
+
+    <script>
+    document.getElementById("impact-map-btn").addEventListener("click", () => {
+        window.location.href = "/map";
+    });
+    </script>
+
+    <script src="/static/js/model.js"></script>
 </body>
 
 </html>

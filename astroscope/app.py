@@ -1,6 +1,6 @@
 import requests
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
 from orbit import orbital_elements_to_3d_points
@@ -14,9 +14,21 @@ CORS(app)
 def hello_world():
     return jsonify({'message': "Hello World"})
 
-@app.route("/")
-def base():
+@app.route("/home")
+def home():
     return "AstroScope"
+
+@app.route('/main')
+def main_page():
+    path = 'index.html'
+    print(path)
+    return send_from_directory('static', path=path)
+
+@app.route('/map')
+def impact_map():
+    path = 'impact_map.html'
+    print(path)
+    return send_from_directory('static', path=path)
 
 @app.route('/api/neo_data/', methods=['POST'])
 def neo_data():
