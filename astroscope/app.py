@@ -25,10 +25,12 @@ def create_app():
     # register Blueprint containing routes
     from sites import sites
     from api import api
+    from sim import sim
 
     app.register_blueprint(sites)
     app.register_blueprint(api)
-
+    app.register_blueprint(sim)
+    
     return app
 
 
