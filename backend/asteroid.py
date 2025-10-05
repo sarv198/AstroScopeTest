@@ -1,5 +1,6 @@
 import requests
 import sys
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 # Base URLs for the NASA JPL APIs
 CAD_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
@@ -31,7 +32,7 @@ def get_high_risk_asteroid_data(limit=10):
     # Sentry API returns data as list of dictionaries, not arrays
     # Verify that the essential fields for risk data are present in the first item
     if sentry_list and isinstance(sentry_list[0], dict):
-        required_sentry_fields = ['des', 'ip', 'diameter']
+        required_sentry_fields = ['des', 'ip', 'diameter', ]
         available_fields = list(sentry_list[0].keys())
         if not all(field in available_fields for field in required_sentry_fields):
             print(f"Sentry API response format error: Missing required fields {required_sentry_fields}. Available fields: {available_fields}", file=sys.stderr)
@@ -100,6 +101,7 @@ def get_high_risk_asteroid_data(limit=10):
         
     return results
 
+'''
 # --- Run the function and display results ---
 asteroid_list = get_high_risk_asteroid_data(limit=10)
 
@@ -134,6 +136,7 @@ if asteroid_list:
         )
 else:
     print("\nCould not retrieve high-risk asteroid data or the risk list is empty.")
+'''
 
 
 def get_sentry_des(impact_probability = 1e-5):
@@ -156,4 +159,3 @@ def get_sentry_des(impact_probability = 1e-5):
 
     return list_of_des
 
-# print(get_sentry_des())

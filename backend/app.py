@@ -1,9 +1,12 @@
+import requests
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import requests
-from utils import api_new
 from asteroid import get_high_risk_asteroid_data
 # set up flask app:
+
+list_of_des = []
+
 app = Flask(__name__)
 CORS(app)
 
@@ -17,24 +20,24 @@ def hello_world():
 def neo_data():
     content = request.json
 
-    # the filter values
-    ip_min = content.get('ip_min')
-    approach_date = content.get('approach_date')
+    if content is None:
+        return jsonify({"error": "Missing or invalid JSON body"}), 400
+    
+    #ip_min = content.get('ip_min')
+    #approach_date = content.get('approach_date')
     limit = content.get('limit')
-
-
+    data = get_high_risk_asteroid_data(limit)
+    for key in data.keys():
+        list_of_des.append(key)
     
-    
+    return jsonify({'data':data})
     # parse the content for key info: filters, api to request
-    # ...
-    
-    # TODO: use the backend data to return in jsonify format
-    # use the nasa_api.py
-    # TODO: Implement NEO data retrieval logic
-    
-    return jsonify({'data': 'NEO data endpoint - implementation needed'})
 
 
+
+#@app.route('/api/neo_stat/<des>', methods=['POST'])
+def neo_stat(des):
+    pass
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
@@ -97,7 +100,6 @@ def get_orbital_params(des: str):
 # Example of how you would call this function:
 # params_eros = get_orbital_params('Eros') 
 # print(json.dumps(params_eros, indent=2))
- 
 
 if __name__ == "__main__":
     app.run(debug=True)
