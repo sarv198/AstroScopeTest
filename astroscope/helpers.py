@@ -18,9 +18,7 @@ CAD_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
 SBDB_URL = "https://ssd-api.jpl.nasa.gov/sbdb.api"
 SENTRY_URL = "https://ssd-api.jpl.nasa.gov/sentry.api"
 
-
-@cache.memoize(timeout=3600)
-def get_high_risk_asteroid_data(limit: int = 10):
+def get_high_risk_asteroid_data(limit: int = 100):
     """
     Fetches the list of objects from the Sentry Risk Table (Impact Probability > 0)
     and retrieves risk data (including Palermo Scale), close-approach details (CAD), 

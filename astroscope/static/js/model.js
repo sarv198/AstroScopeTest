@@ -31,9 +31,10 @@ let scaleMode = 'enhanced';
 
 // --- SCALE DEFINITIONS ---
 // Enhanced scale uses logarithmic scaling for better visualization of small bodies/inner system
+// Arbritary Scaling
 const enhancedScale = {
-    distance: (d) => Math.log10(d * AU / 1e6) * d * 50,
-    size: (s) => Math.log(s) * 2
+    distance: (d) => Math.log10(d * AU / 1e6) * Math.sqrt(d) * 40 + 10 * Math.cbrt(Math.log10(d * AU / 1e4)),
+    size: (s) => Math.log2(s)
 };
 
 // True Scale uses a consistent factor for both size and distance (1 unit = 10,000,000 km)
@@ -49,18 +50,8 @@ let currentScale = enhancedScale;
 // Loading Manager for UI
 const loadingManager = new THREE.LoadingManager();
 const textureLoader = new THREE.TextureLoader(loadingManager);
-const scaleFactor = currentScale.distance(1.0);
 loadingManager.onLoad = () => { setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; document.getElementById('loading-screen').addEventListener('transitionend', () => document.getElementById('loading-screen').style.display = 'none'); }, 500); };
 loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElementById('loading-bar').style.width = (itemsLoaded / itemsTotal) * 100 + '%'; };
-
-
-// Asteroid orbit data
-const retrievedOrbitsData = [
-    // Example 1: Use the result from your Python script example 
-    // a=1.0, e=0.3, i_deg=10, RAAN_deg=40, argp_deg=60
-    // Note: This would contain actual orbit data from your Python script
-    // For now, we'll leave it empty to prevent errors
-];
 
 function init() {
     scene = new THREE.Scene();
@@ -75,18 +66,7 @@ function init() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-
-    createSun(); 
-    createPlanets(); 
-
-    retrievedOrbitsData.forEach((params, index) => {
-        // Note: This would draw retrieved orbit data from your Python script
-        // For now, we'll skip this since we don't have actual orbit data loaded
-        // drawRetrieved3DOrbit(pointsArray, scaleFactor, 0xffcc00, `Retrieved Orbit ${index + 1}`);
-    });
-
-    createNEOs(); 
-    createStars();
+    createSun(); createPlanets(); createNEOs(); createStars();
     setupUI();
 
     // Raycaster for object picking
@@ -107,6 +87,13 @@ function init() {
             if (clickedObject.userData.key && planetaryData[clickedObject.userData.key]) {
                 displayInfo(planetaryData[clickedObject.userData.key]);
                 targetObject = celestialObjects[clickedObject.userData.key].group;
+                const targetRadius = currentScale.size(planetaryData[clickedObject.userData.key].diameter) / 2;
+                // Set camera offset based on the scaled radius
+                desiredCameraOffset.set(0, targetRadius * 40, targetRadius * 100);
+            }
+            if (clickedObject.userData.key && celestialObjects.neo[clickedObject.userData.key]) {
+                targetObject = celestialObjects.neo[clickedObject.userData.key].group;
+                populateStatsPanel();
                 const targetRadius = currentScale.size(planetaryData[clickedObject.userData.key].diameter) / 2;
                 // Set camera offset based on the scaled radius
                 desiredCameraOffset.set(0, targetRadius * 40, targetRadius * 100);
@@ -231,34 +218,6 @@ function createPlanets() {
     updateScales();
 }
 
-/**
- * Draws the orbit as a 3D Line from an array of XYZ coordinates.
- * @param {Array<number>} pointsArray - Flat array of [x1, y1, z1, x2, y2, z2, ...]
- * @param {number} scaleFactor - The distance scale factor (from currentScale.distance(1.0))
- */
-function drawRetrieved3DOrbit(pointsArray, scaleFactor, color = 0xffcc00, name = "3D Orbit") {
-    const scaledPoints = [];
-    for (let i = 0; i < pointsArray.length; i += 3) {
-        // Apply scaling to the coordinates
-        const x = pointsArray[i] * scaleFactor;
-        const y = pointsArray[i + 1] * scaleFactor;
-        const z = pointsArray[i + 2] * scaleFactor;
-        
-        // Map ECI (X, Y, Z) to Three.js World (X, Z, -Y)
-        scaledPoints.push(new THREE.Vector3(x, z, -y));
-    }
-
-    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(scaledPoints);
-    const orbitMaterial = new THREE.LineBasicMaterial({ color: color });
-    const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
-
-    const orbitGroup = new THREE.Group();
-    orbitGroup.add(orbitLine);
-    orbitGroup.name = name;
-    scene.add(orbitGroup);
-    return orbitGroup;
-}
-
 function createNEOs() {
     const neoCount = 150, neosGroup = new THREE.Group();
     neosGroup.name = "NEOs"; neosGroup.userData.key = "neos";
@@ -302,14 +261,21 @@ function setupUI() {
     document.getElementById('play-pause-btn').addEventListener('click', () => { isPaused = !isPaused; document.getElementById('play-pause-btn').innerHTML = isPaused ? '&#9658;' : '&#10074;&#10074;'; });
     document.getElementById('time-forward-btn').addEventListener('click', () => { slider.value = Math.min(parseInt(slider.value) + 50, 1000); slider.dispatchEvent(new Event('input')); });
     document.getElementById('time-backward-btn').addEventListener('click', () => { slider.value = Math.max(parseInt(slider.value) - 50, 0); slider.dispatchEvent(new Event('input')); });
-    const visibilityContainer = document.getElementById('visibility-controls'), orbitVisibilityContainer = document.getElementById('orbit-visibility-controls');
-    Object.keys({ ...planetaryData, neos: { name: "NEOs" } }).forEach(key => { const name = planetaryData[key]?.name || "NEOs"; visibilityContainer.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked data-target="${key}"><span class="checkmark"></span>${name}</label>`; if (planetaryData[key]) orbitVisibilityContainer.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked data-target-orbit="${key}"><span class="checkmark"></span>${name}</label>`; });
-    visibilityContainer.addEventListener('change', (e) => { const targetKey = e.target.dataset.target; if (targetKey && celestialObjects[targetKey]) celestialObjects[targetKey].group.visible = e.target.checked; });
-    orbitVisibilityContainer.addEventListener('change', (e) => { const targetKey = e.target.dataset.targetOrbit; if (targetKey && celestialObjects[targetKey] && celestialObjects[targetKey].orbit) celestialObjects[targetKey].orbit.visible = e.target.checked; });
+
     document.getElementById('info-close-btn').addEventListener('click', () => { document.getElementById('info-panel').style.display = 'none'; targetObject = null; });
-    document.getElementById('focus-sun-btn').addEventListener('click', () => { targetObject = celestialObjects.sun.group; desiredCameraOffset.set(0, 200, 500); });
+    document.getElementById('stats-close-btn').addEventListener('click', () => { document.getElementById('stats-panel').style.display = 'none'; targetObject = null; });
+    document.getElementById('focus-sun-btn').addEventListener('click', () => { targetObject = celestialObjects.sun.group; desiredCameraOffset.set(0, 100, 250); });
+    document.getElementById('focus-earth-btn').addEventListener('click', () => { targetObject = celestialObjects.earth.group; desiredCameraOffset.set(0, 40, 135); });
     document.getElementById('labels-on-btn').addEventListener('click', (e) => { setLabelsVisible(true); e.target.classList.add('active'); document.getElementById('labels-off-btn').classList.remove('active'); });
     document.getElementById('labels-off-btn').addEventListener('click', (e) => { setLabelsVisible(false); e.target.classList.add('active'); document.getElementById('labels-on-btn').classList.remove('active'); });
+    document.getElementById('planet-on-btn').addEventListener('click', (e) => { setPlanetVisible(true); e.target.classList.add('active'); document.getElementById('planet-off-btn').classList.remove('active'); });
+    document.getElementById('planet-off-btn').addEventListener('click', (e) => { setPlanetVisible(false); e.target.classList.add('active'); document.getElementById('planet-on-btn').classList.remove('active'); });
+    document.getElementById('planet-tra-on-btn').addEventListener('click', (e) => { setPlanetTraVisible(true); e.target.classList.add('active'); document.getElementById('planet-tra-off-btn').classList.remove('active'); });
+    document.getElementById('planet-tra-off-btn').addEventListener('click', (e) => { setPlanetTraVisible(false); e.target.classList.add('active'); document.getElementById('planet-tra-on-btn').classList.remove('active'); });
+    document.getElementById('neo-on-btn').addEventListener('click', (e) => { setNEOVisible(true); e.target.classList.add('active'); document.getElementById('neo-off-btn').classList.remove('active'); });
+    document.getElementById('neo-off-btn').addEventListener('click', (e) => { setNEOVisible(false); e.target.classList.add('active'); document.getElementById('neo-on-btn').classList.remove('active'); });
+    document.getElementById('neo-tra-on-btn').addEventListener('click', (e) => { setNEOVisible(true); e.target.classList.add('active'); document.getElementById('neo-tra-off-btn').classList.remove('active'); });
+    document.getElementById('neo-tra-off-btn').addEventListener('click', (e) => { setNEOVisible(false); e.target.classList.add('active'); document.getElementById('neo-tra-on-btn').classList.remove('active'); });
     populateStatsPanel();
 }
 
@@ -331,8 +297,16 @@ function populateStatsPanel() {
 }
 
 function setLabelsVisible(visible) { Object.keys(planetaryData).forEach(key => { if (celestialObjects[key] && celestialObjects[key].label) celestialObjects[key].label.visible = visible; }); }
+function setPlanetVisible(visible) { Object.keys(planetaryData).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].group.visible = visible; }); }
+function setPlanetTraVisible(visible) { Object.keys(planetaryData).forEach(key => { if (celestialObjects[key] && celestialObjects[key].orbit) celestialObjects[key].orbit.visible = visible; }); }
+function setNEOVisible(visible) {
+    Object.keys({ neos: { name: "NEOs" } }).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].group.visible = visible; });
+}
+function setNEOTraVisible(visible) { Object.keys({ neos: { name: "NEOs" } }).forEach(key => { if (celestialObjects[key] && celestialObjects[key].group) celestialObjects[key].orbit.visible = visible; }); }
 function formatTimeSpeed(speed) { if (speed < 60) return `${speed.toFixed(1)} sec/sec`; if (speed < 3600) return `${(speed / 60).toFixed(1)} min/sec`; if (speed < 86400) return `${(speed / 3600).toFixed(1)} hours/sec`; if (speed < 86400 * 30.44) return `${(speed / 86400).toFixed(1)} days/sec`; if (speed < 86400 * 365.25) return `${(speed / (86400 * 30.44)).toFixed(1)} months/sec`; return `${(speed / (86400 * 365.25)).toFixed(1)} years/sec`; }
+
 function displayInfo(data) { document.getElementById('info-title').textContent = data.name; document.getElementById('info-content').innerHTML = `<div class="info-item"><span class="info-label">Diameter</span><span class="info-value">${data.diameter.toLocaleString()} km</span></div><div class="info-item"><span class="info-label">Orbital Period</span><span class="info-value">${data.orbitalPeriod.toFixed(2)} days</span></div><div class="info-item"><span class="info-label">Rotation Period</span><span class="info-value">${Math.abs(data.rotationPeriod)} hours</span></div><div class="info-item"><span class="info-label">Axial Tilt</span><span class="info-value">${data.obliquity}°</span></div><div class="info-item"><span class="info-label">Eccentricity</span><span class="info-value">${data.e}</span></div>`; document.getElementById('info-panel').style.display = 'block'; }
+
 
 function updateScales() {
     // SUN SCALING
@@ -466,5 +440,4 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
-
 init();
