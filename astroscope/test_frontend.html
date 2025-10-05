@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEO Dropdown Test</title>
+</head>
+<body>
+    <h1>NEO Dropdown Test</h1>
+    <select id="neoSelect">
+        <option value="">Loading...</option>
+    </select>
+    <div id="status"></div>
+
+    <script>
+        const neoSelect = document.getElementById('neoSelect');
+        const status = document.getElementById('status');
+        
+        status.textContent = 'Fetching NEO data...';
+        
+        fetch('/sim/neos')
+            .then(r => r.json())
+            .then(({neos = []}) => {
+                status.textContent = `Found ${neos.length} NEOs`;
+                neoSelect.innerHTML = '<option value="">— Select from Sentry —</option>';
+                
+                neos.forEach(n => {
+                    const mt = Number(n.energy_mt);
+                    const opt = document.createElement('option');
+                    opt.value = mt;
+                    opt.textContent = `${n.name} — ${mt.toFixed(3)} Mt`;
+                    neoSelect.appendChild(opt);
+                });
+            })
+            .catch(error => {
+                status.textContent = `Error: ${error.message}`;
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+</html>

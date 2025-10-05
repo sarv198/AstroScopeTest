@@ -3,7 +3,7 @@
 
 # start_date = '2015-06-30'
 # end_date = '2016-06-30'
-# api_key = 'V2PUUx21RDfaBSJn3VbX9AOsQHQ8b9b8qnT76OBY'
+# api_key = #note: keys are really secrets but redacted just in case.
 
 # # print(f'https://api.nasa.gov/neo/rest/v1/feed?start_date={start_date}&end_date={end_date}&api_key={api_key}')
 # # result = requests.get(f'https://api.nasa.gov/neo/rest/v1/feed?start_date={start_date}&api_key={api_key}')

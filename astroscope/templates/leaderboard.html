@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palermo Scale Leaderboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white font-sans min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="text-center py-8">
+    <div class="max-w-3xl mx-auto mt-10 mb-8 p-6 rounded-2xl bg-gray-800/60 backdrop-blur-md border border-yellow-400/40 shadow-lg text-gray-200">
+  <h3 class="text-yellow-300 font-bold mb-3 text-2xl flex items-center gap-2">
+    What is the Palermo Scale?
+  </h3>
+  <p class="leading-relaxed text-base">
+    The <span class="text-yellow-200 font-medium">Palermo Technical Impact Hazard Scale</span> 
+    is used by NASA to measure the potential risk of an asteroid impact. 
+    It compares the predicted impact probability and energy to the background risk of impacts 
+    over the same time period.
+  </p>
+  <p class="mt-3 leading-relaxed text-base">
+    <span class="text-red-400 font-semibold">Values above 0</span> indicate an elevated concern, 
+    while <span class="text-gray-400 font-semibold">values below 0</span> suggest less concern 
+    relative to the background impact probability.
+  </p>
+  <a href="#palermo-calculator"
+   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-500/90 hover:bg-yellow-500 
+          text-black font-semibold shadow-lg transition">
+  Jump to Calculator
+</a>
+
+</div>
+    <br>
+    <h1 class="text-4xl font-extrabold text-yellow-400 tracking-wider drop-shadow-lg">
+      Top 10 Asteroids by Palermo Scale 
+    </h1>
+    <p class="mt-2 text-gray-300 italic">
+      Ranking potential impact threats tracked by NASA’s Sentry System
+    </p>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="w-full max-w-4xl mx-auto p-4 space-y-6">
+
+    {% for obj in data %}
+    <div class="bg-gray-800/60 backdrop-blur-md rounded-2xl shadow-lg border border-gray-700 hover:shadow-yellow-500/30 transition-all duration-300">
+      <div class="flex items-center justify-between p-4 cursor-pointer" onclick="toggleDetails({{ loop.index0 }})">
+        <div class="flex items-center space-x-4">
+          <img src="https://images-assets.nasa.gov/image/PIA24472/PIA24472~small.jpg" alt="meteor" class="w-32 h-32 rounded-xl shadow-lg object-cover">
+          <div>
+            <h2 class="text-2xl font-bold text-yellow-300">
+              #{{ loop.index }} — {{ obj['Full Name'] }}
+            </h2>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-3xl font-mono text-red-400">{{ obj['Palermo Scale'] }}</span>
+          <p class="text-sm text-gray-400">Palermo Scale</p>
+        </div>
+      </div>
+
+      <!-- COLLAPSIBLE DETAILS -->
+      <div id="details-{{ loop.index0 }}" class="hidden border-t border-gray-700 p-4 space-y-2 text-sm text-gray-200">
+        <p><strong>Impact Probability:</strong> {{ obj['Impact Probability'] }}</p>
+        <p><strong>Velocity:</strong> {{ obj['Velocity'] }}</p>
+        <p><strong>Diameter:</strong> {{ obj['Diameter'] }}</p>
+        <p><strong>Kinetic Energy:</strong> {{ obj['Kinetic Energy'] }}</p>
+        <p><strong>Potential Impact Date:</strong> {{ obj['Potential Impact Date'] }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </main>
+
+  <!-- FOOTER / EXPLANATION -->
+  <footer class="mt-10 mb-6 w-full max-w-3xl mx-auto text-center text-gray-300 text-sm leading-relaxed">
+
+    <button onclick="window.location.href='/main'" 
+      class="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold shadow-lg">
+      Back to Solar System
+    </button>
+    <p style="font-size: 0.9em; color: #888; margin-top: 0.5em;">Image: NASA / JPL-Caltech — PIA24472</p>
+  </footer>
+
+  <script>
+    function toggleDetails(index) {
+      const el = document.getElementById(`details-${index}`);
+      el.classList.toggle('hidden');
+    }
+  </script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<section id="palermo-equation"
+  class="max-w-4xl mx-auto mt-8 mb-6 p-6 rounded-2xl bg-gray-800/60 backdrop-blur-md border border-yellow-400/40 shadow-lg text-gray-200">
+
+  <h3 class="text-yellow-300 font-bold mb-4 text-2xl">Palermo Scale — Equation & Symbols</h3>
+
+  <div class="grid md:grid-cols-5 gap-6 items-start">
+    <!-- Equation -->
+    <div class="md:col-span-2 rounded-xl bg-gray-900/60 border border-gray-700 p-4">
+      <p class="text-sm text-gray-400 mb-2">Equation (base-10 logarithm)</p>
+      <p class="text-2xl leading-relaxed font-mono">
+        $$ \mathrm{PS}=\log_{10}\!\left(\frac{P_i/T_i}{f_B}\right) $$
+      </p>
+    </div>
+
+    <!-- Definitions -->
+    <div class="md:col-span-3 rounded-xl bg-gray-900/60 border border-gray-700 p-4">
+      <p class="text-sm text-gray-400 mb-2">Symbols</p>
+      <ul class="space-y-2 text-gray-200">
+        <li><span class="font-semibold text-yellow-200">\(P_i\)</span> — cumulative impact probability over the window.</li>
+        <li><span class="font-semibold text-yellow-200">\(T_i\)</span> — time window in years to the potential impact or analysis horizon.</li>
+        <li><span class="font-semibold text-yellow-200">\(f_B\)</span> — background annual impact frequency (per year) for events of comparable severity.</li>
+      </ul>
+
+      <hr class="my-4 border-gray-700">
+      <p class="text-sm text-gray-300">
+        Interpretation: PS \(>\) 0 → above background risk; PS \(<\) 0 → below background risk.
+      </p>
+    </div>
+  </div>
+</section>
+
+ <section id="palermo-calculator"
+  class="max-w-4xl mx-auto mt-10 mb-12 p-6 rounded-2xl bg-gray-800/60 backdrop-blur-md border border-yellow-400/40 shadow-lg text-gray-200">
+
+  <h3 class="text-yellow-300 font-bold mb-4 text-2xl">Palermo Scale & Energy Calculator</h3>
+
+  <!-- Mode selector -->
+  <div class="mb-5 flex items-center gap-4">
+    <label class="flex items-center gap-2 text-sm">
+      <input type="radio" name="calc-mode" id="mode-energy" checked>
+      <span>Use <strong>Energy</strong> (Mt)</span>
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="radio" name="calc-mode" id="mode-size">
+      <span>Use <strong>Size</strong> (Diameter, Velocity, Density)</span>
+    </label>
+  </div>
+
+  <!-- Inputs -->
+  <div class="grid md:grid-cols-2 gap-5">
+    <!-- Probability & time -->
+    <div class="space-y-3">
+      <label class="block text-sm text-gray-300">Impact probability (0–1)</label>
+      <input id="calc-pi" type="number" step="any" min="0" max="1" value="1e-5"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+      <label class="block text-sm text-gray-300 mt-3">Time window (years)</label>
+      <input id="calc-ti" type="number" step="any" min="0.0001" value="100"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+
+    <!-- ENERGY MODE -->
+    <div id="block-energy" class="space-y-3">
+      <label class="block text-sm text-gray-300">Impact Energy (Mt of TNT)</label>
+      <input id="calc-E-mt" type="number" step="any" min="0" value="200"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+
+    <!-- SIZE MODE -->
+    <div id="block-size" class="space-y-3 hidden">
+      <label class="block text-sm text-gray-300">Diameter (m)</label>
+      <input id="calc-diam" type="number" step="any" min="0" value="140"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+
+      <label class="block text-sm text-gray-300 mt-3">Velocity (km/s)</label>
+      <input id="calc-vel" type="number" step="any" min="0" value="20"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+
+      <label class="block text-sm text-gray-300 mt-3">Bulk density (kg/m³)</label>
+      <input id="calc-rho" type="number" step="any" min="0" value="3000"
+             class="w-full px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+  </div>
+
+  <!-- Background frequency -->
+  <div class="mt-6 p-4 rounded-xl bg-gray-900/60 border border-gray-700">
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+      <label class="flex items-center gap-2 text-sm text-gray-200">
+        <input id="calc-auto-fb" type="checkbox" class="w-4 h-4" checked>
+        Auto-estimate background frequency (f<sub>B</sub>) from energy/size
+      </label>
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-300">f<sub>B</sub> (/yr)</label>
+        <input id="calc-fb" type="number" step="any" min="0" value="1e-4"
+               class="w-40 px-3 py-2 rounded-xl bg-gray-900/70 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+    </div>
+    <p id="calc-fb-hint" class="mt-2 text-xs text-gray-400">
+      Auto uses simple power-law fits; you can override manually.
+    </p>
+  </div>
+
+  <!-- Results -->
+  <div class="grid md:grid-cols-3 gap-5 mt-6">
+    <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-4">
+      <p class="text-sm text-gray-400">Kinetic Energy</p>
+      <p id="calc-energy-mt" class="text-2xl font-mono mt-1 text-yellow-300">—</p>
+      <p id="calc-energy-j" class="text-xs text-gray-500 mt-1">— J</p>
+    </div>
+    <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-4">
+      <p class="text-sm text-gray-400">Background Frequency</p>
+      <p id="calc-fb-echo" class="text-2xl font-mono mt-1 text-blue-300">— /yr</p>
+      <p id="calc-fb-note" class="text-xs text-gray-500 mt-1">source: —</p>
+    </div>
+    <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-4">
+      <p class="text-sm text-gray-400">Palermo Scale</p>
+      <p id="calc-ps" class="text-2xl font-mono mt-1">—</p>
+      <p id="calc-ps-interp" class="text-xs mt-1 text-gray-500">—</p>
+    </div>
+  </div>
+</section>
+
+<script>
+  // DOM helpers
+  const $ = (id) => document.getElementById(id);
+
+  // Inputs
+  const modeEnergyEl = $('mode-energy');
+  const modeSizeEl   = $('mode-size');
+  const blockEnergy  = $('block-energy');
+  const blockSize    = $('block-size');
+
+  const piEl  = $('calc-pi');
+  const tiEl  = $('calc-ti');
+
+  const EmtEl = $('calc-E-mt');      // energy mode
+  const dEl   = $('calc-diam');      // size mode
+  const vEl   = $('calc-vel');
+  const rhoEl = $('calc-rho');
+
+  const fbEl      = $('calc-fb');
+  const autoFbEl  = $('calc-auto-fb');
+
+  // Outputs
+  const energyMtEl = $('calc-energy-mt');
+  const energyJEl  = $('calc-energy-j');
+  const fbEchoEl   = $('calc-fb-echo');
+  const fbNoteEl   = $('calc-fb-note');
+  const psEl       = $('calc-ps');
+  const psInterpEl = $('calc-ps-interp');
+
+  // Constants
+  const MT_J = 4.184e15;
+  const PI   = Math.PI;
+
+  // Power-law fits (rough, for demo)
+  // frequency vs diameter (km): f_B ≈ A * D^{-b}
+  const A_d = 6.3e-3, b_d = 2.7;
+  // frequency vs energy (Mt): f_B ≈ A_e * E^{-alpha}, calibrated so that ~200 Mt ≈ 1e-4/yr
+  const A_e = 1.1774080373049495e-2, alpha_e = 0.9;
+
+  function estimateFBfromDiameter(d_m) {
+    if (!d_m || d_m <= 0) return null;
+    const d_km = d_m / 1000;
+    const fb = A_d * Math.pow(d_km, -b_d);
+    return (isFinite(fb) && fb > 0) ? fb : null;
+  }
+
+  function estimateFBfromEnergy(E_mt) {
+    if (!E_mt || E_mt <= 0) return null;
+    const fb = A_e * Math.pow(E_mt, -alpha_e);
+    return (isFinite(fb) && fb > 0) ? fb : null;
+  }
+
+  function energyFromSizeMt(d_m, rho, v_kms) {
+    if (!d_m || !rho || !v_kms) return NaN;
+    const m = (PI/6) * rho * Math.pow(d_m, 3);
+    const v = v_kms * 1000;
+    const EJ = 0.5 * m * v * v;
+    return EJ / MT_J; // Mt
+  }
+
+  const fmtSci = (x) => (!isFinite(x) || x <= 0) ? '—' : x.toExponential(2).replace('+','');
+  const fmtNum = (x, n=2) => isFinite(x) ? Number(x).toFixed(n) : '—';
+
+  function recalc() {
+    const Pi = parseFloat(piEl.value);
+    const Ti = parseFloat(tiEl.value);
+
+    // Determine energy (Mt)
+    let E_mt = NaN;
+    let fbVal = parseFloat(fbEl.value);
+    let fbSrc = 'manual';
+
+    const usingEnergy = modeEnergyEl.checked;
+
+    if (usingEnergy) {
+      E_mt = parseFloat(EmtEl.value);
+      if (autoFbEl.checked) {
+        const est = estimateFBfromEnergy(E_mt);
+        if (est) {
+          fbVal = est;
+          fbSrc = 'auto (from energy)';
+          fbEl.value = est.toExponential(2);
+        }
+      }
+    } else {
+      const D = parseFloat(dEl.value);
+      const v = parseFloat(vEl.value);
+      const rho= parseFloat(rhoEl.value);
+      E_mt = energyFromSizeMt(D, rho, v);
+      if (autoFbEl.checked) {
+        const est = estimateFBfromDiameter(D);
+        if (est) {
+          fbVal = est;
+          fbSrc = 'auto (from diameter)';
+          fbEl.value = est.toExponential(2);
+        }
+      }
+    }
+
+    // Update energy display
+    const EJ = isFinite(E_mt) ? (E_mt * MT_J) : NaN;
+    energyMtEl.textContent = isFinite(E_mt) ? `${fmtNum(E_mt, 2)} Mt` : '—';
+    energyJEl.textContent  = isFinite(EJ)   ? `${fmtSci(EJ)} J` : '—';
+
+    // Background frequency display
+    fbEchoEl.textContent = isFinite(fbVal) ? `${fmtSci(fbVal)} /yr` : '—';
+    fbNoteEl.textContent = `source: ${fbSrc}`;
+
+    // Palermo
+    let PS = NaN;
+    if (isFinite(Pi) && Pi > 0 && isFinite(Ti) && Ti > 0 && isFinite(fbVal) && fbVal > 0) {
+      PS = Math.log10((Pi / Ti) / fbVal);
+    }
+    psEl.textContent = isFinite(PS) ? fmtNum(PS, 2) : '—';
+    psInterpEl.textContent =
+      isFinite(PS)
+        ? (PS > 0 ? 'Above background risk' : (PS > -2 ? 'Comparable to background' : 'Well below background'))
+        : '—';
+  }
+
+  function syncModeUI() {
+    const usingEnergy = modeEnergyEl.checked;
+    blockEnergy.classList.toggle('hidden', !usingEnergy);
+    blockSize.classList.toggle('hidden', usingEnergy);
+    recalc();
+  }
+
+  // Events
+  [modeEnergyEl, modeSizeEl].forEach(el => el.addEventListener('change', syncModeUI));
+  ['calc-pi','calc-ti','calc-E-mt','calc-diam','calc-vel','calc-rho','calc-fb','calc-auto-fb']
+    .forEach(id => $(id)?.addEventListener('input', recalc));
+
+  // Init
+  syncModeUI();
+</script>
+
+</body>
+</html>
