@@ -11,7 +11,7 @@ Methods:
 import requests
 import sys
 from typing import List, Dict, Any
-from app import cache
+from extensions import cache
 
 
 # Base URLs for the NASA JPL APIs
@@ -20,6 +20,7 @@ SBDB_URL = "https://ssd-api.jpl.nasa.gov/sbdb.api"
 SENTRY_URL = "https://ssd-api.jpl.nasa.gov/sentry.api"
 
 
+@cache.memoize(timeout=3600)
 def get_high_risk_asteroid_data(limit: int = 10):
     """
     Fetches the list of objects from the Sentry Risk Table (Impact Probability > 0)
@@ -137,7 +138,8 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
 @cache.memoize(timeout=3600)
 def get_neo_data_single(des: str) -> dict:
     """Fetch detailed data for one asteroid (includes fullname)."""
-    # --- Sentry fetch ---
+
+    # Sentry API
     try:
         sentry_resp = requests.get(SENTRY_URL, timeout=10)
         sentry_resp.raise_for_status()
@@ -148,7 +150,7 @@ def get_neo_data_single(des: str) -> dict:
     except requests.RequestException as e:
         raise RuntimeError(f"Sentry fetch failed for {des}: {e}")
 
-    # --- SBDB fetch ---
+    # SBDB API
     try:
         sbdb_resp = requests.get(SBDB_URL, params={"sstr": des}, timeout=5)
         sbdb_resp.raise_for_status()
