@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 let scene, camera, renderer, controls;
 let clock = new THREE.Clock();
 let simulationTime = new Date();
