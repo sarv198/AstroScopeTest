@@ -27,6 +27,7 @@ def neo_data():
     #approach_date = content.get('approach_date')
     limit = content.get('limit')
     data = get_high_risk_asteroid_data(limit)
+    
     for key in data.keys():
         list_of_des.append(key)
     
