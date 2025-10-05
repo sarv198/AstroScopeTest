@@ -7,7 +7,7 @@ Team Numbercrunchers for NASA Space Apps
 cd astroscope
 ``<br>
 ``
-python3 run.py
+python3 app.py
 ``
 
 ## Note:
