@@ -17,7 +17,7 @@ CAD_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
 SBDB_URL = "https://ssd-api.jpl.nasa.gov/sbdb.api"
 SENTRY_URL = "https://ssd-api.jpl.nasa.gov/sentry.api"
 
-def get_high_risk_asteroid_data(limit: int = 10) -> List[Dict[str, str]]:
+def get_high_risk_asteroid_data(limit: int = 10):
     """
     Fetches the list of objects from the Sentry Risk Table (Impact Probability > 0)
     and retrieves risk data (including Palermo Scale), close-approach details (CAD), 
@@ -53,7 +53,7 @@ def get_high_risk_asteroid_data(limit: int = 10) -> List[Dict[str, str]]:
         return []
 
     results = []
-    
+    list_of_des = []
     print(f"2. Retrieving additional data (CAD/SBDB) for the top {limit} high-risk objects...")
 
     # --- 2. Iterate and fetch supplemental data for filtered asteroids ---
@@ -63,6 +63,7 @@ def get_high_risk_asteroid_data(limit: int = 10) -> List[Dict[str, str]]:
             
         # Extract risk data from the Sentry list item (dictionary format)
         name = item.get('des') # This is the 'des' value from the API
+        list_of_des.append(name)
         cumulative_prob = item.get('ip')
         diameter_km = item.get('diameter')
         palermo_scale_val = item.get('ps_max') 
@@ -113,7 +114,7 @@ def get_high_risk_asteroid_data(limit: int = 10) -> List[Dict[str, str]]:
             "Kinetic Energy": kinetic_energy_str
         })
         
-    return results
+    return (results, list_of_des)
 
 def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
     """

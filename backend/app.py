@@ -29,9 +29,9 @@ def neo_data():
     #approach_date = content.get('approach_date')
     limit = content.get('limit')
     data = get_high_risk_asteroid_data(limit)
-    data = format_results_to_dictionary(data)
+    data_dict = format_results_to_dictionary(data[0])
     
-    return jsonify({'data':data})
+    return jsonify({'data': data_dict, 'list_of_des': data[1]})
     # parse the content for key info: filters, api to request
 
 
@@ -42,7 +42,6 @@ def neo_stat(des):
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
-
 
 @app.route('/orbital_params/', methods=['GET']) 
 def get_orbital_params():
@@ -60,14 +59,14 @@ def get_orbital_params():
     # The 'des' query parameter is required to specify the asteroid/NEO.
     API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
     list_of_des = request.args.getlist('des')
-    if list_of_des is None:
+    if not list_of_des:
         return {'error': f'No list of des given'}, 400
     
     full_response = {}
     for des in list_of_des:
         
         params = {'des': des}
-        
+
 
         try:
             response = requests.get(API_URL, params=params)
