@@ -72,12 +72,7 @@ def orbital_elements_to_ellipsecurve(a, e, i_deg, RAAN_deg, argp_deg, earth_pos=
         "aRotation": float(aRotation)
     }
 
-# ---------------- Example ----------------
-if __name__ == "__main__":
-    params = orbital_elements_to_ellipsecurve(
-        a=1.0,=0.3, i_deg=10, RAAN_deg=40, argp_deg=60 e
-    )
-    print(params)
+
 
 
 

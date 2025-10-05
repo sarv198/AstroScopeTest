@@ -3,6 +3,7 @@ import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
+from orbit import orbital_elements_to_ellipsecurve
 # set up flask app:
 
 list_of_des = []
@@ -73,8 +74,9 @@ def get_orbital_params(des: str):
     # --- Data Extraction and Filtering ---
     try:
         # data["orbit"]["elements"] is a list of dictionaries, where each dict is an element.
-        all_elements = data.get("orbit", {}).get("elements", [])
         
+        all_elements = data.get("orbit", {}).get("elements", [])
+        print(all_elements)
         keplerian_params = {}
         # Iterate through all available elements in the API response
         for el in all_elements:
@@ -83,20 +85,24 @@ def get_orbital_params(des: str):
             # Check if the element is one of the six required Keplerian parameters
             if name in KEPLERIAN_ELEMENTS:
                 # Store the full details (value, label, units)
-                keplerian_params[name] = {
-                    "value": el.get("value"),
-                    "label": el.get("label"),
-                    "units": el.get("units")
-                }
+                print(name)
+                keplerian_params[name] = float(el.get("value"))
 
-        # Original list comprehension requested in the prompt (adapted to the correct structure):
-        # element_names = [el["name"] for el in data["orbit"]["elements"] if el["name"] in KEPLERIAN_ELEMENTS]
-        # return element_names 
+        p_r = orbital_elements_to_ellipsecurve(
+                a = keplerian_params['a'], 
+                e = keplerian_params['e'], 
+                i_deg = keplerian_params['i'], 
+                RAAN_deg = keplerian_params['om'], 
+                argp_deg= keplerian_params['w'],
+        )
+        print(p_r) # for testing
+        return jsonify(p_r)
+
         
-        return keplerian_params
+
 
     except Exception as e:
-        return {"error": f"Error parsing API response: {e}"}
+        return {"error": f"Error parsing API response: {e}"}, 400
     
 
 # Example of how you would call this function:
