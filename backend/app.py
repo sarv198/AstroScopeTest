@@ -27,7 +27,7 @@ def neo_data():
     
     #ip_min = content.get('ip_min')
     #approach_date = content.get('approach_date')
-    limit = content.get('limit')
+    limit = content.get('limit') or 10
     data = get_high_risk_asteroid_data(limit)
     data_dict = format_results_to_dictionary(data[0])
     
@@ -107,6 +107,7 @@ def get_orbital_params():
 
         except Exception as e:
             return {"error": f"Error parsing API response: {e}"}, 400
+    #print(full_response)
     return jsonify(full_response)
 
 # Example of how you would call this function:
