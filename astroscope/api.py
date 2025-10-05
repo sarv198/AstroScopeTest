@@ -1,7 +1,7 @@
 import requests
 
 from flask import Blueprint, jsonify, send_from_directory, redirect, request
-from asteroid import get_high_risk_asteroid_data, get_neo_data_single, format_results_to_dictionary
+from helpers import get_high_risk_asteroid_data, get_neo_data_single, format_results_to_dictionary
 from orbit import orbital_elements_to_3d_points
 
 

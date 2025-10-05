@@ -13,7 +13,6 @@ import sys
 from typing import List, Dict, Any
 from extensions import cache
 
-
 # Base URLs for the NASA JPL APIs
 CAD_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
 SBDB_URL = "https://ssd-api.jpl.nasa.gov/sbdb.api"
@@ -135,9 +134,9 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
     return final_dict
 
 
-@cache.memoize(timeout=3600)
+@cache.memoize(timeout=36000)
 def get_neo_data_single(des: str) -> dict:
-    """Fetch detailed data for one asteroid (includes fullname)."""
+    """Fetch detailed data for one asteroid (includes fullname). Caches for 10 hours"""
 
     # Sentry API
     try:
@@ -173,6 +172,75 @@ def get_neo_data_single(des: str) -> dict:
     }
 
     return data
+
+@cache.memoize(timeout=36000)
+def get_vi_data(des: str) -> dict:
+    """
+    Returns kinetic energy, impact date, and distance for a given asteroid.
+    Caches per-object results for 10 hour.
+    """
+    try:
+        r = requests.get(SENTRY_URL, params={"des": des}, timeout=5)
+        r.raise_for_status()
+        vi_list = r.json().get("data", [])
+        if not vi_list:
+            return {"energy": "N/A", "date": "N/A", "dist": "N/A"}
+
+        # Choose highest-energy virtual impactor (worst case)
+        top_vi = max(vi_list, key=lambda v: v.get("energy", 0) or 0)
+
+        return {
+            "energy": f"{float(top_vi.get('energy', 0)):.2f} Mt",
+            "date": top_vi.get("date", "N/A"),
+            "dist": f"{float(top_vi.get('dist', 0)):.6f} au" if top_vi.get("dist") else "N/A"
+        }
+
+    except requests.RequestException:
+        return {"energy": "N/A", "date": "N/A", "dist": "N/A"}
+
+
+@cache.memoize(timeout=3600)
+def get_palermo_leaderboard(limit: int = 10):
+    """
+    Builds a leaderboard of the most dangerous asteroids,
+    sorted by Palermo Scale (descending).
+    """
+    try:
+        r = requests.get(SENTRY_URL, timeout=10)
+        r.raise_for_status()
+        sentry_list = r.json().get("data", [])
+    except requests.RequestException as e:
+        print(f"Sentry API fetch failed: {e}", file=sys.stderr)
+        return []
+
+    if not sentry_list:
+        print("No active impact-risk objects in Sentry data.")
+        return []
+
+    # Sort by Palermo Scale (descending) 
+    sentry_list.sort(
+        key=lambda o: float(o.get("ps_max", -99) or -99),
+        reverse=True
+    )
+
+    leaderboard = []
+    for obj in sentry_list[:limit]:
+        des = obj.get("des")
+        vi_info = get_vi_data(des)
+
+        leaderboard.append({
+            "des": des,
+            "Palermo Scale": f"{float(obj.get('ps_max', -99)):.2f}",
+            "Impact Probability": f"{float(obj.get('ip', 0.0)):.2e}",
+            "Velocity": f"{float(obj.get('v_inf', 0.0)):.3f} km/s",
+            "Diameter": f"{float(obj.get('diameter', 0.0)):.3f} km",
+            "Kinetic Energy": vi_info.get("energy"),
+            "Impact Date": vi_info.get("date"),
+            "Approach Distance": vi_info.get("dist")
+        })
+
+    return leaderboard
+
 
 
 '''
