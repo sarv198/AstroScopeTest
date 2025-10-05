@@ -11,11 +11,14 @@ Methods:
 import requests
 import sys
 from typing import List, Dict, Any
+from app import cache
+
 
 # Base URLs for the NASA JPL APIs
 CAD_URL = "https://ssd-api.jpl.nasa.gov/cad.api"
 SBDB_URL = "https://ssd-api.jpl.nasa.gov/sbdb.api"
 SENTRY_URL = "https://ssd-api.jpl.nasa.gov/sentry.api"
+
 
 def get_high_risk_asteroid_data(limit: int = 10):
     """
@@ -129,6 +132,46 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
         final_dict[name_key] = item
         
     return final_dict
+
+
+@cache.memoize(timeout=3600)
+def get_neo_data_single(des: str) -> dict:
+    """Fetch detailed data for one asteroid (includes fullname)."""
+    # --- Sentry fetch ---
+    try:
+        sentry_resp = requests.get(SENTRY_URL, timeout=10)
+        sentry_resp.raise_for_status()
+        sentry_list = sentry_resp.json().get("data", [])
+        sentry_obj = next((o for o in sentry_list if o.get("des") == des), None)
+        if not sentry_obj:
+            raise RuntimeError(f"{des} not found in Sentry data")
+    except requests.RequestException as e:
+        raise RuntimeError(f"Sentry fetch failed for {des}: {e}")
+
+    # --- SBDB fetch ---
+    try:
+        sbdb_resp = requests.get(SBDB_URL, params={"sstr": des}, timeout=5)
+        sbdb_resp.raise_for_status()
+        sbdb_data = sbdb_resp.json()
+        orbit_data = sbdb_data.get("orbit", {})
+        moid = orbit_data.get("moid")
+        fullname = sbdb_data.get("object", {}).get("fullname", des)
+        moid_str = f"{float(moid):.6f} au (MOID)" if moid is not None else "N/A"
+    except requests.RequestException as e:
+        raise RuntimeError(f"SBDB fetch failed for {des}: {e}")
+
+    data = {
+        "des": des,
+        "Full Name": fullname,
+        "Diameter": f"{float(sentry_obj.get('diameter', 0)):.3f} km",
+        "Velocity": f"{float(sentry_obj.get('v_inf', 0)):.3f} km/s",
+        "Impact Probability": f"{float(sentry_obj.get('ip', 0)):.2e}",
+        "Palermo Scale": f"{float(sentry_obj.get('ps_max', 0)):.2f}",
+        "Close Approach Distance": moid_str,
+    }
+
+    return data
+
 
 '''
 # TESTING and DEPRECIATED CODE
