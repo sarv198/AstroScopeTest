@@ -28,20 +28,32 @@ def neo_data():
     return jsonify({'data': data_dict, 'list_of_des': data[1]})
     # parse the content for key info: filters, api to request
 
+@api.route('/neo_data_test/<limit>')
+def neo_data_test(limit: int):
+    limit = int(limit)
+    data = get_high_risk_asteroid_data(limit)
+    data_dict = format_results_to_dictionary(data[0])
+    #print( jsonify({'data': data_dict, 'list_of_des': data[1]}))
+    return jsonify({'data': data_dict, 'list_of_des': data[1]})
 
-@api.route('/neo_stat/<des>', methods=['POST'])
-def neo_stat(des):
+
+@api.route('/neo_stat/', methods=['GET'])
+def neo_stat():
     '''
     Grab stats for one object using des. Similar style as neo_data, instead just grabbing data.
     Use cache to grab: any des visible to Frontend should have gone through neo_data, thus cached
     '''
+    des = request.args.get('des')
+    if not des:
+        return {'error': 'Must include \'des\' argument'}, 400
+
     result = None
     for i in range(5):
         try:
             result = get_neo_data_single(des)
             break
         except Exception as e:
-            print('Exception Occured {e}')
+            print(f'Exception Occured {e}')
             print("Retrying...")
 
     if not result:
