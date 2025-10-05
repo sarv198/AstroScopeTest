@@ -6,17 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!--    
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
         rel="stylesheet">
-    -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <link rel="stylesheet" href="/static/css/styles.css">
 
-    <style>
-    </style>
 </head>
 
 <body>
@@ -31,7 +27,7 @@
 
     <div id="controls-panel" class="ui-panel">
         <h2>SYSTEM CONTROLS</h2>
-        <div class="control-group"><label for="scale-mode">Viewing Scale</label>
+        <div class="control-group">
             <div id="scale-mode" class="flex gap-2"><button id="scale-enhanced-btn"
                     class="button active w-1/2">Enhanced</button><button id="scale-true-btn" class="button w-1/2">True
                     Scale</button></div>
@@ -39,24 +35,36 @@
         <div class="control-group"><label for="time-speed-slider">Time Speed: <span
                     id="time-speed-label">1x</span></label><input type="range" id="time-speed-slider" min="0" max="1000"
                 value="50"></div>
-        <div class="control-group"><label>Object Visibility</label>
-            <div class="checkbox-container" id="visibility-controls"></div>
+        <div class="control-group"><label>Planet Visiblity</label>
+            <div class="flex gap-2"><button id="planet-on-btn" class="button active w-1/2">On</button><button
+                    id="planet-off-btn" class="button w-1/2">Off</button></div>
         </div>
-        <div class="control-group"><label>Orbit Visibility</label>
-            <div class="checkbox-container" id="orbit-visibility-controls"></div>
+        <div class="control-group"><label>Planet Trajectory</label>
+            <div class="flex gap-2"><button id="planet-tra-on-btn" class="button active w-1/2">On</button><button
+                    id="planet-tra-off-btn" class="button w-1/2">Off</button></div>
+        </div>
+        <div class="control-group"><label>NEO Visibily</label>
+            <div class="flex gap-2"><button id="neo-on-btn" class="button active w-1/2">On</button><button
+                    id="neo-off-btn" class="button w-1/2">Off</button></div>
+        </div>
+        <div class="control-group"><label>NEO Trajectory</label>
+            <div class="flex gap-2"><button id="neo-tra-on-btn" class="button active w-1/2">On</button><button
+                    id="neo-tra-off-btn" class="button w-1/2">Off</button></div>
         </div>
         <div class="control-group"><label>Label Visibility</label>
             <div class="flex gap-2"><button id="labels-on-btn" class="button active w-1/2">On</button><button
                     id="labels-off-btn" class="button w-1/2">Off</button></div>
         </div>
         <div class="control-group"><button id="focus-sun-btn" class="button w-full">Focus on Sun</button></div>
+        <div class="control-group"><button id="focus-earth-btn" class="button w-full">Focus on Earth</button></div>
     </div>
 
     <div id="stats-panel" class="ui-panel">
-        <h2 id="stats-title">NEO STATISTICS</h2>
+        <div class="stats-header">
+            <h2 id="stats-title">NEO STATISTICS</h2><button class="close-btn" id="stats-close-btn">&times;</button>
+        </div>
         <div id="stats-content"></div>
     </div>
-    
 
     <div id="info-panel" class="ui-panel">
         <div class="info-header">
@@ -70,16 +78,22 @@
         <button id="play-pause-btn" class="button play-pause">&#10074;&#10074;</button>
         <button id="time-forward-btn" class="button">&gt;&gt;</button>
     </div>
+    <script src="/static/js/model.js"></script>
 
-    <div class="control-group">
-    <button id="impact-map-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Impact Map
-    </button>
 
-    <button id="leaderboard-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Palermo Scale Leaderboard
-    </button>
-    </div>
+
+<!-- Overlay UI panel ABOVE the canvas -->
+<div id="ui-controls"
+     class="ui-panel fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-3">
+  <button id="impact-map-btn"
+    class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow">
+    View Impact Map
+  </button>
+  <button id="leaderboard-btn"
+    class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold shadow">
+    View Palermo Scale Leaderboard
+  </button>
+</div>
 
     <script>
     document.getElementById("impact-map-btn").addEventListener("click", () => {
@@ -91,7 +105,7 @@
     });
     </script>
 
-    <script src="/static/js/model.js"></script>
 </body>
 
 </html>
+
