@@ -52,6 +52,16 @@ const textureLoader = new THREE.TextureLoader(loadingManager);
 loadingManager.onLoad = () => { setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; document.getElementById('loading-screen').addEventListener('transitionend', () => document.getElementById('loading-screen').style.display = 'none'); }, 500); };
 loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElementById('loading-bar').style.width = (itemsLoaded / itemsTotal) * 100 + '%'; };
 
+
+// Asteroid orbit data
+const retrievedOrbitsData = [
+    // Example 1: Use the result from your Python script example 
+    // a=1.0, e=0.3, i_deg=10, RAAN_deg=40, argp_deg=60
+    { aX: 0.052, aY: -0.016, xRadius: 1.011, yRadius: 0.947, aStartAngle: 0, aEndAngle: 6.283, aClockwise: false, aRotation: 3.12 },
+    // Example 2: A highly inclined, smaller orbit
+    { aX: -0.05, aY: 0.1, xRadius: 0.5, yRadius: 0.45, aStartAngle: 0, aEndAngle: 6.283, aClockwise: false, aRotation: 0.8 },
+];
+
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010409);
@@ -65,7 +75,17 @@ function init() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-    createSun(); createPlanets(); createNEOs(); createStars();
+
+    createSun(); 
+    createPlanets(); 
+
+    retrievedOrbitsData.forEach((params, index) => {
+        const scaledParams = scaleOrbitParams(params);
+        drawRetrievedOrbit(scaledParams, 0xffcc00, `Retrieved Orbit ${index + 1}`);
+    });
+
+    createNEOs(); 
+    createStars();
     setupUI();
 
     // Raycaster for object picking
@@ -211,69 +231,47 @@ function createPlanets() {
 }
 
 /**
- * Creates a 2D orbit path in the Ecliptic (XY) plane using parameters derived
- * from the external orbital_elements_to_ellipsecurve script and adds it to the scene.
- *
- * @param {object} orbitParams - The dictionary returned by the Python script:
- * {aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aRotation, aClockwise}
- * @param {string} color - The hexadecimal color for the orbit line.
- * @param {string} name - A name for the orbit group.
- * @returns {THREE.Group} The group containing the orbit path.
+ * Draws the orbit as a 3D Line from an array of XYZ coordinates.
+ * @param {Array<number>} pointsArray - Flat array of [x1, y1, z1, x2, y2, z2, ...]
+ * @param {number} scaleFactor - The distance scale factor (from currentScale.distance(1.0))
  */
-function drawRetrievedOrbit(orbitParams, color = 0xcc3333, name = "Retrieved Orbit") {
-    // 1. Create the Ellipse Curve using the calculated parameters.
-    // NOTE: Three.js EllipseCurve is defined in the XY plane by default.
-    const curve = new THREE.EllipseCurve(
-        orbitParams.aX,      // aX
-        orbitParams.aY,      // aY
-        orbitParams.xRadius, // xRadius
-        orbitParams.yRadius, // yRadius
-        orbitParams.aStartAngle, // aStartAngle (0)
-        orbitParams.aEndAngle,   // aEndAngle (2*PI)
-        orbitParams.aClockwise,  // aClockwise (false)
-        orbitParams.aRotation    // aRotation (angle of the major axis)
-    );
+function drawRetrieved3DOrbit(pointsArray, scaleFactor, color = 0xffcc00, name = "3D Orbit") {
+    const scaledPoints = [];
+    for (let i = 0; i < pointsArray.length; i += 3) {
+        // Apply scaling to the coordinates
+        const x = pointsArray[i] * scaleFactor;
+        const y = pointsArray[i + 1] * scaleFactor;
+        const z = pointsArray[i + 2] * scaleFactor;
+        
+        // Map ECI (X, Y, Z) to Three.js World (X, Z, -Y)
+        scaledPoints.push(new THREE.Vector3(x, z, -y));
+    }
 
-    // 2. Generate points for the orbit line.
-    const points = curve.getPoints(300); // Increased points for smoother curve
-
-    // 3. Transform the 2D (X, Y) points to the 3D Three.js World (X, Z, -Y)
-    // Your Python script projects the 3D orbit onto the XY plane (Ecliptic).
-    // In your scene setup, the Ecliptic plane is **X-Z** (since you map `p.y` to `-p.z`).
-    const transformedPoints = points.map(p => new THREE.Vector3(p.x, 0, -p.y));
-
-    // 4. Create the Orbit Line object.
-    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(transformedPoints);
+    const orbitGeometry = new THREE.BufferGeometry().setFromPoints(scaledPoints);
     const orbitMaterial = new THREE.LineBasicMaterial({ color: color });
     const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
 
-    // 5. Create a Group and add the line.
-    // The rotation (aRotation) is already factored into the EllipseCurve's points
-    // via the aRotation parameter, so no additional rotation is needed on the group.
     const orbitGroup = new THREE.Group();
     orbitGroup.add(orbitLine);
     orbitGroup.name = name;
-    orbitGroup.userData.isCustomOrbit = true; // For potential visibility controls
-    
-    // Set a position for the orbit center (already included in aX, aY, but keeps objects grouped)
-    // The points are already offset by aX/aY, so the group position is (0,0,0).
-    
-    // 6. Add a small dot to represent the object's current position (at the start of the orbit for simplicity)
-    const objectDot = new THREE.Mesh(
-        new THREE.SphereGeometry(2, 8, 8), // Small size, adjust as needed
-        new THREE.MeshBasicMaterial({ color: color })
-    );
-    // The first point in the orbit is where the object is assumed to be at t=0
-    objectDot.position.copy(transformedPoints[0]);
-    objectDot.name = name + " Object";
-    objectDot.userData.isCustomObject = true;
-    objectDot.userData.aX = orbitParams.aX; // Store for potential future movement
-    objectDot.userData.aY = orbitParams.aY;
-
-    orbitGroup.add(objectDot);
-    
     scene.add(orbitGroup);
     return orbitGroup;
+}
+
+// Function to scale the AU-based output of \ Python script
+function scaleOrbitParams(params) {
+    const scaleFactor = currentScale.distance(1.0); // Get the scale factor for 1 AU
+
+    return {
+        aX: params.aX * scaleFactor,
+        aY: params.aY * scaleFactor,
+        xRadius: params.xRadius * scaleFactor,
+        yRadius: params.yRadius * scaleFactor,
+        aStartAngle: params.aStartAngle,
+        aEndAngle: params.aEndAngle,
+        aClockwise: params.aClockwise,
+        aRotation: params.aRotation
+    };
 }
 
 function createNEOs() {
