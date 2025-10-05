@@ -65,7 +65,6 @@
         </div>
         <div id="stats-content"></div>
     </div>
-    
 
     <div id="info-panel" class="ui-panel">
         <div class="info-header">
@@ -79,15 +78,22 @@
         <button id="play-pause-btn" class="button play-pause">&#10074;&#10074;</button>
         <button id="time-forward-btn" class="button">&gt;&gt;</button>
     </div>
-    <div class="control-group">
-    <button id="impact-map-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Impact Map
-    </button>
+    <script src="/static/js/model.js"></script>
 
-    <button id="leaderboard-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
-        View Palermo Scale Leaderboard
-    </button>
-    </div>
+
+
+<!-- Overlay UI panel ABOVE the canvas -->
+<div id="ui-controls"
+     class="ui-panel fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-3">
+  <button id="impact-map-btn"
+    class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow">
+    View Impact Map
+  </button>
+  <button id="leaderboard-btn"
+    class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold shadow">
+    View Palermo Scale Leaderboard
+  </button>
+</div>
 
     <script>
     document.getElementById("impact-map-btn").addEventListener("click", () => {
@@ -99,7 +105,7 @@
     });
     </script>
 
-    <script src="/static/js/model.js"></script>
 </body>
 
 </html>
+
