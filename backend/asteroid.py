@@ -1,6 +1,15 @@
+'''
+Purpose:
+Interacting with NASA NEO APIs such as Sentry, NEOWS, SCOUT APIs
+
+Methods:
+- HTTPS GET requests for data
+- Pass filters to requests
+
+'''
+
 import requests
 import sys
-import json
 from typing import List, Dict, Any
 
 # Base URLs for the NASA JPL APIs
@@ -121,7 +130,7 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
     return final_dict
 
 '''
-# --- Run the function and give the results in a dictionary ---
+# TESTING CODE
 asteroid_list = get_high_risk_asteroid_data(limit=10)
 
 if asteroid_list:

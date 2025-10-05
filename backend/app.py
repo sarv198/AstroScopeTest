@@ -6,8 +6,6 @@ from asteroid import get_high_risk_asteroid_data, format_results_to_dictionary
 from orbit import orbital_elements_to_3d_points
 # set up flask app:
 
-list_of_des = []
-
 app = Flask(__name__)
 CORS(app)
 
@@ -46,8 +44,8 @@ def neo_stat(des):
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
 
 
-@app.route('/orbital_params/<des>', methods=['GET']) 
-def get_orbital_params(des: str):
+@app.route('/orbital_params/', methods=['GET']) 
+def get_orbital_params():
     """
     Retrieves the six Keplerian orbital elements for a given designation (des).
 
@@ -61,49 +59,56 @@ def get_orbital_params(des: str):
     # --- API Call ---
     # The 'des' query parameter is required to specify the asteroid/NEO.
     API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
-    params = {'des': des}
+    list_of_des = request.args.getlist('des')
+    if list_of_des is None:
+        return {'error': f'No list of des given'}, 400
     
-    try:
-        response = requests.get(API_URL, params=params)
-        response.raise_for_status() # Raises an exception for bad status codes (4xx or 5xx)
-        data = response.json()
-    except requests.exceptions.RequestException as e:
-        # Handle API connection or HTTP errors
-        return {"error": f"API request failed: {e}"}
-
-    # --- Data Extraction and Filtering ---
-    try:
-        # data["orbit"]["elements"] is a list of dictionaries, where each dict is an element.
+    full_response = {}
+    for des in list_of_des:
         
-        all_elements = data.get("orbit", {}).get("elements", [])
-        print(all_elements)
-        keplerian_params = {}
-        # Iterate through all available elements in the API response
-        for el in all_elements:
-            name = el.get("name")
+        params = {'des': des}
+        
+
+        try:
+            response = requests.get(API_URL, params=params)
+            response.raise_for_status() # Raises an exception for bad status codes (4xx or 5xx)
+            data = response.json()
+        except requests.exceptions.RequestException as e:
+            # Handle API connection or HTTP errors
+            return {"error": f"API request failed: {e}"}
+
+        # --- Data Extraction and Filtering ---
+
+        try:
+            # data["orbit"]["elements"] is a list of dictionaries, where each dict is an element.
             
-            # Check if the element is one of the six required Keplerian parameters
-            if name in KEPLERIAN_ELEMENTS:
-                # Store the full details (value, label, units)
-                print(name)
-                keplerian_params[name] = float(el.get("value"))
+            all_elements = data.get("orbit", {}).get("elements", [])
+            print(all_elements)
+            keplerian_params = {}
+            # Iterate through all available elements in the API response
+            for el in all_elements:
+                name = el.get("name")
+                
+                # Check if the element is one of the six required Keplerian parameters
+                if name in KEPLERIAN_ELEMENTS:
+                    # Store the full details (value, label, units)
+                    print(name)
+                    keplerian_params[name] = float(el.get("value"))
 
-        p_r = orbital_elements_to_ellipsecurve(
-                a = keplerian_params['a'], 
-                e = keplerian_params['e'], 
-                i_deg = keplerian_params['i'], 
-                RAAN_deg = keplerian_params['om'], 
-                argp_deg= keplerian_params['w'],
-        )
-        print(p_r) # for testing
-        return jsonify(p_r)
-
-        
+            p_r = orbital_elements_to_3d_points(
+                    a = keplerian_params['a'], 
+                    e = keplerian_params['e'], 
+                    i_deg = keplerian_params['i'], 
+                    RAAN_deg = keplerian_params['om'], 
+                    argp_deg= keplerian_params['w'],
+            )
+            print(p_r) # for testing
+            full_response[des] = p_r
 
 
-    except Exception as e:
-        return {"error": f"Error parsing API response: {e}"}, 400
-    
+        except Exception as e:
+            return {"error": f"Error parsing API response: {e}"}, 400
+    return jsonify(full_response)
 
 # Example of how you would call this function:
 # params_eros = get_orbital_params('Eros') 
