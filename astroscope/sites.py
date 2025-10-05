@@ -1,5 +1,5 @@
-from flask import Blueprint, jsonify, send_from_directory, redirect, request
-
+from flask import Blueprint, jsonify, send_from_directory, redirect, request, render_template
+from helpers import get_palermo_leaderboard
 
 
 sites = Blueprint('main', __name__)
@@ -28,3 +28,8 @@ def impact_map():
 @sites.route('/')
 def base():
     return redirect('/main')
+
+@sites.route('/leaderboard')
+def leaderboard():
+    data = get_palermo_leaderboard(limit=10)
+    return render_template("leaderboard.html", data=data)

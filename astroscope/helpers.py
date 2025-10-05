@@ -133,73 +133,55 @@ def format_results_to_dictionary(asteroid_list: List[Dict[str, str]]) -> Dict[st
         
     return final_dict
 
-
-@cache.memoize(timeout=36000)
-def get_neo_data_single(des: str) -> dict:
-    """Fetch detailed data for one asteroid (includes fullname). Caches for 10 hours"""
-
-    # Sentry API
-    try:
-        sentry_resp = requests.get(SENTRY_URL, timeout=10)
-        sentry_resp.raise_for_status()
-        sentry_list = sentry_resp.json().get("data", [])
-        sentry_obj = next((o for o in sentry_list if o.get("des") == des), None)
-        if not sentry_obj:
-            raise RuntimeError(f"{des} not found in Sentry data")
-    except requests.RequestException as e:
-        raise RuntimeError(f"Sentry fetch failed for {des}: {e}")
-
-    # SBDB API
-    try:
-        sbdb_resp = requests.get(SBDB_URL, params={"sstr": des}, timeout=5)
-        sbdb_resp.raise_for_status()
-        sbdb_data = sbdb_resp.json()
-        orbit_data = sbdb_data.get("orbit", {})
-        moid = orbit_data.get("moid")
-        fullname = sbdb_data.get("object", {}).get("fullname", des)
-        moid_str = f"{float(moid):.6f} au (MOID)" if moid is not None else "N/A"
-    except requests.RequestException as e:
-        raise RuntimeError(f"SBDB fetch failed for {des}: {e}")
-
-    data = {
-        "des": des,
-        "Full Name": fullname,
-        "Diameter": f"{float(sentry_obj.get('diameter', 0)):.3f} km",
-        "Velocity": f"{float(sentry_obj.get('v_inf', 0)):.3f} km/s",
-        "Impact Probability": f"{float(sentry_obj.get('ip', 0)):.2e}",
-        "Palermo Scale": f"{float(sentry_obj.get('ps_max', 0)):.2f}",
-        "Close Approach Distance": moid_str,
-    }
-
-    return data
-
-@cache.memoize(timeout=36000)
+@cache.memoize(timeout=36000)  # 10 hours
 def get_vi_data(des: str) -> dict:
     """
-    Returns kinetic energy, impact date, and distance for a given asteroid.
-    Caches per-object results for 10 hour.
+    Returns merged Sentry + VI information for one asteroid.
+
+    Includes:
+      - des
+      - Palermo Scale
+      - Impact Probability
+      - Velocity
+      - Diameter
+      - Kinetic Energy (highest-energy VI)
+      - Impact Date
+      - Approach Distance
+
+    Caches per-object results for 10 hours.
     """
     try:
-        r = requests.get(SENTRY_URL, params={"des": des}, timeout=5)
+        r = requests.get(SENTRY_URL, params={"des": des}, timeout=10)
         r.raise_for_status()
-        vi_list = r.json().get("data", [])
-        if not vi_list:
-            return {"energy": "N/A", "date": "N/A", "dist": "N/A"}
+        data = r.json()
 
-        # Choose highest-energy virtual impactor (worst case)
-        top_vi = max(vi_list, key=lambda v: v.get("energy", 0) or 0)
+        summary = data.get("summary", {})
+        vi_list = data.get("data", [])
+
+        # Pick the highest-risk virtual impactor (worst-case scenario)
+        top_vi = max(vi_list, key=lambda v: v.get("ps", -99) or -99) if vi_list else {}
 
         return {
-            "energy": f"{float(top_vi.get('energy', 0)):.2f} Mt",
-            "date": top_vi.get("date", "N/A"),
-            "dist": f"{float(top_vi.get('dist', 0)):.6f} au" if top_vi.get("dist") else "N/A"
+            "des": summary.get("des", des),
+            "Full Name": summary.get("fullname", des),
+            "Impact Probability": f"{float(summary.get('ip', 0)):.2e}",
+            "Palermo Scale": f"{float(summary.get('ps_max', -99)):.2f}",
+            "Velocity": f"{float(summary.get('v_inf', 0)):.3f} km/s",
+            "Diameter": f"{float(summary.get('diameter', 0)):.3f} km",
+            "Kinetic Energy": f"{float(top_vi.get('energy', 0)):.2f} Mt" if top_vi else "N/A",
+            "Potential Impact Date": top_vi.get("date", "N/A"),
+            "Approach Distance": (
+                f"{float(top_vi.get('dist', 0)):.6f} au"
+                if top_vi.get("dist") else "N/A"
+            )
         }
 
-    except requests.RequestException:
-        return {"energy": "N/A", "date": "N/A", "dist": "N/A"}
+    except requests.RequestException as e:
+        print(f"Sentry VI API fetch failed: {e}")
+        raise e
 
 
-@cache.memoize(timeout=3600)
+@cache.memoize(timeout=36000)
 def get_palermo_leaderboard(limit: int = 10):
     """
     Builds a leaderboard of the most dangerous asteroids,
@@ -217,26 +199,28 @@ def get_palermo_leaderboard(limit: int = 10):
         print("No active impact-risk objects in Sentry data.")
         return []
 
-    # Sort by Palermo Scale (descending) 
-    sentry_list.sort(
-        key=lambda o: float(o.get("ps_max", -99) or -99),
-        reverse=True
-    )
-
+    # Sort by Palermo Scale descending
+    sentry_list.sort(key=lambda o: float(o.get("ps_max", -99) or -99), reverse=True)
     leaderboard = []
     for obj in sentry_list[:limit]:
         des = obj.get("des")
-        vi_info = get_vi_data(des)
+        full_name = obj.get("fullname") or obj.get("des", "Unknown Object")
+        vi_info = get_vi_data(des) or {}
+        if not vi_info:
+            limit+=1
+            continue
+        print(vi_info)
+
+
 
         leaderboard.append({
-            "des": des,
-            "Palermo Scale": f"{float(obj.get('ps_max', -99)):.2f}",
-            "Impact Probability": f"{float(obj.get('ip', 0.0)):.2e}",
-            "Velocity": f"{float(obj.get('v_inf', 0.0)):.3f} km/s",
-            "Diameter": f"{float(obj.get('diameter', 0.0)):.3f} km",
-            "Kinetic Energy": vi_info.get("energy"),
-            "Impact Date": vi_info.get("date"),
-            "Approach Distance": vi_info.get("dist")
+            "Full Name": full_name,
+            "Palermo Scale": f"{float(vi_info.get('Palermo Scale', -99)):.2f}",
+            "Impact Probability": f"{float(vi_info.get('Impact Probability', 0.0)):.2e}",
+            "Velocity": f"{float(vi_info.get('Velocity', 0.0).split()[0]):.3f} km/s",
+            "Diameter": f"{float(vi_info.get('Diameter', 0.0).split()[0]):.3f} km",
+            "Kinetic Energy": vi_info.get("Kinetic Energy", "N/A"),
+            "Potential Impact Date": str(vi_info.get("Potential Impact Date", "N/A")).split('.')[0]
         })
 
     return leaderboard

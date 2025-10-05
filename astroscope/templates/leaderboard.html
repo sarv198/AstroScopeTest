@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Palermo Scale Leaderboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white font-sans min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="text-center py-8">
+    <h1 class="text-4xl font-extrabold text-yellow-400 tracking-wider drop-shadow-lg">
+      Top 10 Asteroids by Palermo Scale 
+    </h1>
+    <p class="mt-2 text-gray-300 italic">
+      Ranking potential impact threats tracked by NASA’s Sentry System
+    </p>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="w-full max-w-4xl mx-auto p-4 space-y-6">
+
+    {% for obj in data %}
+    <div class="bg-gray-800/60 backdrop-blur-md rounded-2xl shadow-lg border border-gray-700 hover:shadow-yellow-500/30 transition-all duration-300">
+      <div class="flex items-center justify-between p-4 cursor-pointer" onclick="toggleDetails({{ loop.index0 }})">
+        <div class="flex items-center space-x-4">
+          <img src="https://images-assets.nasa.gov/image/PIA24472/PIA24472~small.jpg" alt="meteor" class="w-32 h-32 rounded-xl shadow-lg object-cover">
+          <div>
+            <h2 class="text-2xl font-bold text-yellow-300">
+              #{{ loop.index }} — {{ obj['Full Name'] }}
+            </h2>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-3xl font-mono text-red-400">{{ obj['Palermo Scale'] }}</span>
+          <p class="text-sm text-gray-400">Palermo Scale</p>
+        </div>
+      </div>
+
+      <!-- COLLAPSIBLE DETAILS -->
+      <div id="details-{{ loop.index0 }}" class="hidden border-t border-gray-700 p-4 space-y-2 text-sm text-gray-200">
+        <p><strong>Impact Probability:</strong> {{ obj['Impact Probability'] }}</p>
+        <p><strong>Velocity:</strong> {{ obj['Velocity'] }}</p>
+        <p><strong>Diameter:</strong> {{ obj['Diameter'] }}</p>
+        <p><strong>Kinetic Energy:</strong> {{ obj['Kinetic Energy'] }}</p>
+        <p><strong>Potential Impact Date:</strong> {{ obj['Potential Impact Date'] }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </main>
+
+  <!-- FOOTER / EXPLANATION -->
+  <footer class="mt-10 mb-6 w-full max-w-3xl mx-auto text-center text-gray-300 text-sm leading-relaxed">
+    <h3 class="text-yellow-300 font-semibold mb-2 text-lg">🪐 What is the Palermo Scale?</h3>
+    <p>
+      The Palermo Technical Impact Hazard Scale is used by NASA to measure the potential risk of an asteroid impact.
+      It compares the predicted impact probability and energy to the background risk of impacts over the same time period.
+      <br><span class="text-yellow-400">Values above 0</span> indicate a higher-than-average concern; 
+      <span class="text-gray-400">values below 0</span> are less concerning.
+    </p>
+
+    <button onclick="window.location.href='/main'" 
+      class="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold shadow-lg">
+      Back to Solar System
+    </button>
+    <p style="font-size: 0.9em; color: #888; margin-top: 0.5em;">Image: NASA / JPL-Caltech — PIA24472</p>
+  </footer>
+
+  <script>
+    function toggleDetails(index) {
+      const el = document.getElementById(`details-${index}`);
+      el.classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>

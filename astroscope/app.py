@@ -23,7 +23,7 @@ def create_app():
     cache.init_app(app)
     
     # register Blueprint containing routes
-    from routes import sites
+    from sites import sites
     from api import api
 
     app.register_blueprint(sites)

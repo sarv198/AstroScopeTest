@@ -1,7 +1,7 @@
 import requests
 
 from flask import Blueprint, jsonify, send_from_directory, redirect, request
-from helpers import get_high_risk_asteroid_data, get_neo_data_single, format_results_to_dictionary
+from helpers import get_high_risk_asteroid_data, format_results_to_dictionary, get_palermo_leaderboard, get_vi_data
 from orbit import orbital_elements_to_3d_points
 
 
@@ -28,6 +28,27 @@ def neo_data():
     return jsonify({'data': data_dict, 'list_of_des': data[1]})
     # parse the content for key info: filters, api to request
 
+@api.route('/vi_data/')
+def vi_data():
+    des = request.args.get('des')
+    if not des:
+        return {'error': 'Must include \'des\' argument'}, 400
+    
+    result = None
+    for i in range(5):
+        try:
+            result = get_vi_data(des)
+            break
+        except Exception as e:
+            print(f'Exception Occured {e}')
+            print("Retrying...")
+    
+    if not result:
+        return {'error': 'Exceptions occurred, check stdout for more info'}, 400
+    
+    return jsonify(result)
+
+
 @api.route('/neo_data_test/<limit>')
 def neo_data_test(limit: int):
     limit = int(limit)
@@ -36,30 +57,6 @@ def neo_data_test(limit: int):
     #print( jsonify({'data': data_dict, 'list_of_des': data[1]}))
     return jsonify({'data': data_dict, 'list_of_des': data[1]})
 
-
-@api.route('/neo_stat/', methods=['GET'])
-def neo_stat():
-    '''
-    Grab stats for one object using des. Similar style as neo_data, instead just grabbing data.
-    Use cache to grab: any des visible to Frontend should have gone through neo_data, thus cached
-    '''
-    des = request.args.get('des')
-    if not des:
-        return {'error': 'Must include \'des\' argument'}, 400
-
-    result = None
-    for i in range(5):
-        try:
-            result = get_neo_data_single(des)
-            break
-        except Exception as e:
-            print(f'Exception Occured {e}')
-            print("Retrying...")
-
-    if not result:
-        return {'error': 'Exceptions occurred, check stdout for more info'}, 400
-    
-    return jsonify(result)
 
 # Define the six required Keplerian element short names
 KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
@@ -130,3 +127,34 @@ def get_orbital_params():
             return {"error": f"Error parsing API response: {e}"}, 400
     #print(full_response)
     return jsonify(full_response)
+
+
+'''
+DEPRECIATED:
+
+
+@api.route('/neo_stat/', methods=['GET'])
+def neo_stat():
+
+    Grab stats for one object using des. Similar style as neo_data, instead just grabbing data.
+    Use cache to grab: any des visible to Frontend should have gone through neo_data, thus cached
+
+    des = request.args.get('des')
+    if not des:
+        return {'error': 'Must include \'des\' argument'}, 400
+
+    result = None
+    for i in range(5):
+        try:
+            result = get_neo_data_single(des)
+            break
+        except Exception as e:
+            print(f'Exception Occured {e}')
+            print("Retrying...")
+
+    if not result:
+        return {'error': 'Exceptions occurred, check stdout for more info'}, 400
+    
+    return jsonify(result)
+
+'''
