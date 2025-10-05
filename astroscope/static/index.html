@@ -75,11 +75,19 @@
     <button id="impact-map-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
         View Impact Map
     </button>
+
+    <button id="leaderboard-btn" class="button w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
+        View Palermo Scale Leaderboard
+    </button>
     </div>
 
     <script>
     document.getElementById("impact-map-btn").addEventListener("click", () => {
         window.location.href = "/map";
+    });
+
+    document.getElementById("leaderboard-btn").addEventListener("click", () => {
+        window.location.href = "/leaderboard";
     });
     </script>
 
