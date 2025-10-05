@@ -1,8 +1,5 @@
  body {
-     margin: 0;
      font-family: 'Roboto Mono', monospace;
-     -webkit-font-smoothing: antialiased;
-     -moz-osx-font-smoothing: grayscale;
      background-color: #010409;
      color: #c9d1d9;
      margin: 0;
