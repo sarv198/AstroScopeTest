@@ -128,30 +128,54 @@ def api_neos():
     use energy present on the leaderboard; we skip VI lookups here.
     """
     try:
-        neos_raw = get_palermo_leaderboard(limit=200, include_removed=True)  # type: ignore
-    except TypeError:
-        neos_raw = get_palermo_leaderboard(limit=200)  # type: ignore
+        # Use a direct approach to avoid cache issues
+        import requests
+        SENTRY_URL = "https://ssd-api.jpl.nasa.gov/sentry.api"
+        
+        r = requests.get(SENTRY_URL, timeout=10)
+        r.raise_for_status()
+        sentry_list = r.json().get("data", [])
+        
+        if not sentry_list:
+            return jsonify({"neos": []})
+        
+        # Sort by Palermo Scale descending
+        sentry_list.sort(key=lambda o: float(o.get("ps_max", -99) or -99), reverse=True)
+        
+        cleaned, seen = [], set()
+        for obj in sentry_list[:50]:  # Limit to first 50 for performance
+            des = obj.get("des")
+            full_name = obj.get("fullname") or obj.get("des", "Unknown")
+            
+            if full_name in seen:
+                continue
+                
+            # Get VI data for kinetic energy
+            try:
+                vi_r = requests.get(SENTRY_URL, params={"des": des}, timeout=5)
+                vi_r.raise_for_status()
+                vi_data = vi_r.json()
+                
+                vi_list = vi_data.get("data", [])
+                top_vi = max(vi_list, key=lambda v: v.get("ps", -99) or -99) if vi_list else {}
+                e_mt = float(top_vi.get('energy', 0)) if top_vi else 0
+                
+                if e_mt > 0:  # Only include objects with energy data
+                    seen.add(full_name)
+                    cleaned.append({
+                        "name": full_name,
+                        "energy_mt": float(f"{e_mt:.3f}"),
+                        "status": "Active",
+                    })
+            except Exception:
+                continue  # Skip this object if VI lookup fails
+        
+        neos_sorted = sorted(cleaned, key=lambda x: x["energy_mt"], reverse=True)
+        return jsonify({"neos": neos_sorted})
+        
     except Exception as e:
         print(f"NEO fetch failed: {e}", file=sys.stderr)
-        neos_raw = []
-
-    cleaned, seen = [], set()
-    for obj in neos_raw:
-        name = obj.get("Full Name") or obj.get("des") or "Unknown"
-        if name in seen:
-            continue
-        e_mt = _parse_mt_str(obj.get("Kinetic Energy"))
-        if e_mt is None:  # skip (avoid slow VI lookups)
-            continue
-        seen.add(name)
-        cleaned.append({
-            "name": name,
-            "energy_mt": float(f"{e_mt:.3f}"),
-            "status": obj.get("Status", "Active"),
-        })
-
-    neos_sorted = sorted(cleaned, key=lambda x: x["energy_mt"], reverse=True)
-    return jsonify({"neos": neos_sorted})
+        return jsonify({"neos": []})
 
 @sim.route("/impact", methods=["POST"])
 def api_impact():
