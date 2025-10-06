@@ -55,7 +55,7 @@
 
     {% for obj in data %}
     <div class="bg-gray-800/60 backdrop-blur-md rounded-2xl shadow-lg border border-gray-700 hover:shadow-yellow-500/30 transition-all duration-300">
-      <div class="flex items-center justify-between p-4 cursor-pointer" onclick="toggleDetails({{ loop.index0 }})">
+      <div class="flex items-center justify-between p-4 cursor-pointer" onclick="toggleDetails( loop.index0 )">
         <div class="flex items-center space-x-4">
           <img src="https://images-assets.nasa.gov/image/PIA24472/PIA24472~small.jpg" alt="meteor" class="w-32 h-32 rounded-xl shadow-lg object-cover">
           <div>

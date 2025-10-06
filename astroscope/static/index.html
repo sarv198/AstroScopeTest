@@ -91,45 +91,11 @@
         </button>
     </div>
 
-    <script src="/static/js/model.js"></script>
-
-    <style>
-        .menu-buttons-container {
-            /* Positioning for horizontal centering and moving to the top */
-            position: absolute;
-            top: 20px;
-            /* Shifted to the right by adding ' + 5px' to the centering calculation */
-            left: calc(50% + 5px);
-            transform: translateX(-50%);
-            /* Flex properties for side-by-side layout and spacing */
-            display: flex;
-            gap: 8px;
-            z-index: 10;
-        }
-
-        .menu-button {
-            /* Custom styles for smaller, transparent, borderless buttons */
-            background-color: transparent !important;
-            color: #c9d1d9;
-            text-align: center;
-            text-decoration: none;
-            border: none;
-            padding: 8px 12px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .menu-button:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-        }
-    </style>
-
-
     <div id="rendering-overlay">
         Rendering Scene...
     </div>
+
+    <script src="/static/js/model.js"></script>
 
     <script>
     document.getElementById("impact-map-btn").addEventListener("click", () => {

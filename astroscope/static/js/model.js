@@ -74,20 +74,20 @@ async function init() {
     controls.enableDamping = true;
     scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
-    showRenderingOverlay(); 
-
     createSun(); 
     createPlanets(); 
 
     setupUI();
 
+    showRenderingOverlay(); 
+
     console.time("NEO Load Time");
     const neoData = await fetchCombinedOrbitalData();
     createNEOs(neoData); 
-
     console.timeEnd("NEO Load Time");
+
     hideRenderingOverlay();
-    
+
     createStars();
 
 

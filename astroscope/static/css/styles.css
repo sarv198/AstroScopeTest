@@ -59,6 +59,7 @@
      backdrop-filter: blur(5px);
      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
      -webkit-backdrop-filter: blur(5px);
+     z-index: 100;
  }
 
  .ui-panel h2 {
@@ -277,6 +278,37 @@
      color: #f0f6fc;
  }
 
+.menu-buttons-container {
+    /* Positioning for horizontal centering and moving to the top */
+    position: absolute;
+    top: 20px;
+    /* Shifted to the right by adding ' + 5px' to the centering calculation */
+    left: calc(50% + 5px);
+    transform: translateX(-50%);
+    /* Flex properties for side-by-side layout and spacing */
+    display: flex;
+    gap: 8px;
+    z-index: 60;
+}
+
+.menu-button {
+    /* Custom styles for smaller, transparent, borderless buttons */
+    background-color: transparent !important;
+    color: #c9d1d9;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+}
+
+.menu-button:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 #rendering-overlay {
     position: fixed; 
     top: 0; 
@@ -289,6 +321,6 @@
     justify-content: center; 
     align-items: center; 
     font-size: 2em;
-    z-index: 1000; /* High z-index to be on top of everything */
+    z-index: 50; /* High z-index to be on top of everything */
     transition: opacity 0.5s ease-out; /* For smooth fading */
 }
