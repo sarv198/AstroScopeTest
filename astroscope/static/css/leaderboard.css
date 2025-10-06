@@ -1,0 +1,90 @@
+/* General Body and Font Styles from styles.css */
+body {
+    font-family: 'Roboto Mono', monospace;
+    background-color: #010409;
+    color: #c9d1d9;
+}
+
+/* Headings Font Style */
+h1,
+h2,
+h3,
+h4 {
+    font-family: 'Orbitron', sans-serif;
+    color: #f0f6fc;
+}
+
+/* Replicating the .ui-panel style from styles.css */
+.ui-panel-style {
+    background-color: rgba(13, 17, 23, 0.85);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    transition: border-color 0.3s ease;
+}
+
+.ui-panel-style:hover {
+    border-color: #8b949e;
+}
+
+/* Menu Buttons Styling to match index.html */
+.menu-buttons-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.menu-button a {
+    color: #c9d1d9;
+    text-decoration: none;
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: transparent;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+
+.menu-button a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Specific text colors from the theme */
+.text-highlight {
+    color: #58a6ff;
+}
+
+.text-primary {
+    color: #f0f6fc;
+}
+
+.text-secondary {
+    color: #c9d1d9;
+}
+
+.text-muted {
+    color: #8b949e;
+}
+
+/* Input styling to match the theme */
+.themed-input {
+    background-color: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    border-radius: 6px;
+}
+
+.themed-input:focus {
+    outline: none;
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+}
