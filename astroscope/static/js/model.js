@@ -29,13 +29,6 @@ const planetaryData = {
 const celestialObjects = {};
 let scaleMode = 'enhanced';
 
-
-// Orbital data
-/**
- * Fetches the list of high-risk asteroid designations (des) and then
- * retrieves the Keplerian orbital parameters for those asteroids.
- */
-
 // --- SCALE DEFINITIONS ---
 // Enhanced scale uses logarithmic scaling for better visualization of small bodies/inner system
 // Arbritary Scaling
@@ -293,7 +286,7 @@ async function fetchCombinedOrbitalData() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ limit: 10 }) 
+            body: JSON.stringify({ limit: 30}) 
         });
 
         if (!response.ok) {
