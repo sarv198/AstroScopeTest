@@ -6,8 +6,6 @@
   <title>Asteroid Launcher</title>
 
   <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
   <!-- Leaflet -->
   <link rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -25,6 +23,218 @@
       100% { transform: scale(1); filter: saturate(1); }
     }
   </style>
+  <style>
+        /* Core Styles from styles.css */
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #010409;
+            color: #c9d1d9;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            /* Updated padding: 80px top to clear the fixed header, 20px for sides/bottom */
+            padding: 20px;
+            padding-top: 80px;
+            gap: 20px;
+        }
+
+        .ui-panel {
+            background-color: rgba(13, 17, 23, 0.85);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(5px);
+            /* Adjusted max-height to account for the new 80px top padding + 20px bottom padding (100px total vertical space) */
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .ui-panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #f0f6fc;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.25rem;
+        }
+
+        .ui-panel h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #f0f6fc;
+            border-top: 1px solid #30363d;
+            padding-top: 15px;
+            margin-top: 25px;
+            font-size: 1.1rem;
+        }
+
+        .ui-panel h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #c9d1d9;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #8b949e;
+        }
+
+        .button {
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .button:hover,
+        .button.active {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        input[type="number"] {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 8px;
+            border-radius: 4px;
+            width: calc(100% - 18px);
+            /* Account for padding */
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        /* Results Styling */
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #8b949e;
+        }
+
+        .info-value {
+            color: #f0f6fc;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .damage-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .damage-list li {
+            padding: 5px 0;
+        }
+
+        /* Layout Specific Styles */
+        #controls-column {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        #map-column {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="menu-buttons-container">
+        <button id="impact-map-btn" class="menu-button">
+            <a href="index.html">View Simulation</a>
+        </button>
+
+        <button id="leaderboard-btn" class="menu-button">
+            <a href="leaderboard.html">View Palermo Scale Leaderboard</a>
+        </button>
+    </div>
+
+    <style>
+        a:link,
+        a:visited {
+            background-color: transparent !important;
+            color: #c9d1d9;
+            padding: 5px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .menu-buttons-container {
+            /* FIX: Changed from absolute to fixed position so it sits above the main content */
+            position: fixed;
+            top: 20px;
+            /* Shifted to the right by adding ' + 5px' to the centering calculation */
+            left: calc(50% + 5px);
+            transform: translateX(-50%);
+            /* Flex properties for side-by-side layout and spacing */
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+            /* Increased z-index to ensure it is on top */
+        }
+
+        .menu-button {
+            /* Custom styles for smaller, transparent, borderless buttons */
+            font-family: 'Roboto Mono', monospace;
+            background-color: transparent;
+            color: #c9d1d9;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+    </style>
 </head>
 <body class="bg-black text-white">
   <!-- Header -->
