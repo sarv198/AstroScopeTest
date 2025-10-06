@@ -60,7 +60,7 @@ const textureLoader = new THREE.TextureLoader(loadingManager);
 loadingManager.onLoad = () => { setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; document.getElementById('loading-screen').addEventListener('transitionend', () => document.getElementById('loading-screen').style.display = 'none'); }, 500); };
 loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => { document.getElementById('loading-bar').style.width = (itemsLoaded / itemsTotal) * 100 + '%'; };
 
-function init() {
+async function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x010409);
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
@@ -73,8 +73,23 @@ function init() {
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     scene.add(new THREE.AmbientLight(0xffffff, 0.2));
-    createSun(); createPlanets(); createNEOs(); createStars();
+
+    showRenderingOverlay(); 
+
+    createSun(); 
+    createPlanets(); 
+
     setupUI();
+
+    console.time("NEO Load Time");
+    const neoData = await fetchCombinedOrbitalData();
+    createNEOs(neoData); 
+
+    console.timeEnd("NEO Load Time");
+    hideRenderingOverlay();
+    
+    createStars();
+
 
     // Raycaster for object picking
     const raycaster = new THREE.Raycaster();
@@ -115,6 +130,27 @@ function init() {
 
     window.addEventListener('resize', onWindowResize);
     animate();
+}
+
+function showRenderingOverlay() {
+    const overlay = document.getElementById('rendering-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+    }
+}
+
+// Function to hide the rendering overlay
+function hideRenderingOverlay() {
+    const overlay = document.getElementById('rendering-overlay');
+    if (overlay) {
+        // Use a small delay/transition for a smoother look
+        overlay.style.opacity = '0';
+        overlay.addEventListener('transitionend', function handler() {
+            overlay.style.display = 'none';
+            overlay.removeEventListener('transitionend', handler);
+        }, { once: true });
+    }
 }
 
 function createSun() {
@@ -247,7 +283,7 @@ function createOrbitLine(flattenedPoints) {
  * corresponding Keplerian orbital parameters in a single API call.
  */
 async function fetchCombinedOrbitalData() {
-    const combinedApiUrl = '/api/combined_orbital_data/'; // New endpoint
+    const combinedApiUrl = '/api/combined_orbital_data/'; 
 
     console.log('Fetching combined NEO and orbital data...');
 
@@ -257,7 +293,6 @@ async function fetchCombinedOrbitalData() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            // You can optionally pass a limit here
             body: JSON.stringify({ limit: 10 }) 
         });
 
@@ -267,63 +302,41 @@ async function fetchCombinedOrbitalData() {
 
         const data = await response.json();
 
-        // The response now contains both lists:
-        const designations = data.list_of_des;
+        // The API response structure is:
+        // { 'list_of_des': [...], 'orbital_data': { 'DES_A': {a: X, e: Y, ...}, ... } }
+        
         const orbitalDataMap = data.orbital_data;
+        
+        // --- TRANSFORMATION STEP ---
+        // 1. Get the keys (designations) of the orbitalDataMap.
+        // 2. Use map() to create a new array where each item is a combined object.
+        const neoDataArray = Object.keys(orbitalDataMap).map(des => {
+            const params = orbitalDataMap[des];
+            return {
+                // 'name' is needed for neoGroup.name
+                name: des,
+                // Spread the orbital parameters (a, e, i, Omega, varpi, MO)
+                ...params 
+            };
+        });
 
         console.log('✅ Combined Data Retrieved Successfully!');
-        console.log('List of Designations:', designations);
-        // The orbital data is mapped by designation: {'2001 FO32': {a: 1.23, e: 0.5, ...}, ...}
-        console.log('Orbital Parameters Map:', orbitalDataMap);
+        console.log('Transformed NEO Data Array (Ready for forEach):', neoDataArray);
         
-        return data;
+        // Return the array, which will be the 'neoData' for your rendering function
+        return neoDataArray;
 
     } catch (error) {
         console.error('❌ Error fetching combined data:', error);
+        // Ensure a predictable return type even on error
+        return []; 
     }
-}
+};
 
-function createNEOs() {
+
+function createNEOs(data) {
     // 1. Placeholder data (or use your fetch logic)
-const neoData = fetchCombinedOrbitalData;
-        /* [
-        {
-            "name": "1979 XB",
-            "a": 2.23,
-            "e": 0.708,
-            "i": 24.7,
-            "Omega": 86.1,
-            "varpi": 75.6,
-            "M0": 2444267.667
-        },
-        {
-            "name": "2022 KK2",
-            "a": 1.2,
-            "e": 0.513,
-            "i": 3.12,
-            "Omega": 58.9,
-            "varpi": 75.3,
-            "M0": 2459660.086
-        },
-        {
-            "name": "2000 SG344",
-            "a": 0.977,
-            "e": 0.0669,
-            "i": 0.113,
-            "Omega": 192.0,
-            "varpi": 276.0,
-            "M0": 2461083.186
-        },
-        {
-            "name": "2012 VS76",
-            "a": 0.991,
-            "e": 0.386,
-            "i": 0.807,
-            "Omega": 242.0,
-            "varpi": 285.0,
-            "M0": 2461000.873
-        }
-    ]; */ 
+    const neoData = data; 
 
 
     const neosGroup = new THREE.Group();
