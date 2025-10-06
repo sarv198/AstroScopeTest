@@ -11,5 +11,8 @@
       "src": "/(.*)",
       "dest": "astroscope/wsgi.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONPATH": "."
+  }
 }

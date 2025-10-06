@@ -15,8 +15,7 @@ def create_app():
     CORS(app)
 
     app.config.update({
-        "CACHE_TYPE": "FileSystemCache",
-        "CACHE_DIR": "./neo_cache",
+        "CACHE_TYPE": "SimpleCache",  # Use in-memory cache for serverless
         "CACHE_DEFAULT_TIMEOUT": 3600
     })
 
