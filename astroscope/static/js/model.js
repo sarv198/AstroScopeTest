@@ -31,7 +31,10 @@ let scaleMode = 'enhanced';
 
 
 // Orbital data
-
+/**
+ * Fetches the list of high-risk asteroid designations (des) and then
+ * retrieves the Keplerian orbital parameters for those asteroids.
+ */
 
 // --- SCALE DEFINITIONS ---
 // Enhanced scale uses logarithmic scaling for better visualization of small bodies/inner system
@@ -239,10 +242,51 @@ function createOrbitLine(flattenedPoints) {
     return line;
 }
 
-// Ensure this function is declared as async to use await
-async function createNEOs() {
+/**
+ * Fetches the combined high-risk asteroid designations and their
+ * corresponding Keplerian orbital parameters in a single API call.
+ */
+async function fetchCombinedOrbitalData() {
+    const combinedApiUrl = '/api/combined_orbital_data/'; // New endpoint
+
+    console.log('Fetching combined NEO and orbital data...');
+
+    try {
+        const response = await fetch(combinedApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // You can optionally pass a limit here
+            body: JSON.stringify({ limit: 10 }) 
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // The response now contains both lists:
+        const designations = data.list_of_des;
+        const orbitalDataMap = data.orbital_data;
+
+        console.log('✅ Combined Data Retrieved Successfully!');
+        console.log('List of Designations:', designations);
+        // The orbital data is mapped by designation: {'2001 FO32': {a: 1.23, e: 0.5, ...}, ...}
+        console.log('Orbital Parameters Map:', orbitalDataMap);
+        
+        return data;
+
+    } catch (error) {
+        console.error('❌ Error fetching combined data:', error);
+    }
+}
+
+function createNEOs() {
     // 1. Placeholder data (or use your fetch logic)
-const neoData = [
+const neoData = fetchCombinedOrbitalData;
+        /* [
         {
             "name": "1979 XB",
             "a": 2.23,
@@ -279,7 +323,8 @@ const neoData = [
             "varpi": 285.0,
             "M0": 2461000.873
         }
-    ];
+    ]; */ 
+
 
     const neosGroup = new THREE.Group();
     neosGroup.name = "NEOs";

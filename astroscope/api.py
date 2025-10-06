@@ -131,3 +131,83 @@ def get_orbital_params():
     #print(full_response)
     return jsonify(full_response)
 
+@api.route('/combined_orbital_data/', methods=['POST'])
+def combined_orbital_data():
+    """
+    Handles a single request to get high-risk asteroid designations (des) 
+    and their corresponding Keplerian orbital parameters.
+
+    The client posts a JSON body to this endpoint, similar to /neo_data/.
+    It then internally calls the logic for /neo_data/ and /orbital_params/.
+    """
+    
+    # 1. Get initial data (including list of 'des') from the request body
+    content = request.json
+    if content is None:
+        return jsonify({"error": "Missing or invalid JSON body"}), 400
+    
+    limit = content.get('limit') or 10
+    
+    # Use existing helper function to get the base data
+    try:
+        data_tuple = get_high_risk_asteroid_data(limit)
+        # data_tuple[0] is the list of high-risk NEO data
+        # data_tuple[1] is the list of designations (des)
+        list_of_des = data_tuple[1]
+    except Exception as e:
+        return jsonify({"error": f"Error fetching high-risk asteroid data: {e}"}), 500
+
+    if not list_of_des:
+        return jsonify({'data': {}, 'list_of_des': []}), 200 # Return empty but successful
+
+    # 2. Fetch Orbital Parameters for all 'des' (Logic from get_orbital_params)
+    
+    API_URL = 'https://ssd-api.jpl.nasa.gov/sbdb.api'
+    KEPLERIAN_ELEMENTS = ['e', 'a', 'i', 'om', 'w', 'tp']
+    full_orbital_response = {}
+
+    for des in list_of_des:
+        params = {'des': des}
+
+        try:
+            response = requests.get(API_URL, params=params)
+            response.raise_for_status() 
+            data = response.json()
+        except requests.exceptions.RequestException as e:
+            # Note: We continue if one fails, but log the error
+            print(f"Warning: API request failed for {des}: {e}")
+            continue # Skip to the next designation
+
+        # --- Data Extraction and Filtering ---
+        try:
+            all_elements = data.get("orbit", {}).get("elements", [])
+            keplerian_params = {}
+            for el in all_elements:
+                name = el.get("name")
+                if name in KEPLERIAN_ELEMENTS:
+                    # Store the float value
+                    keplerian_params[name] = float(el.get("value"))
+
+            # Format the required parameters
+            orbital_params = {
+                'a': keplerian_params.get('a'),      # Semi-major axis
+                'e': keplerian_params.get('e'),      # Eccentricity
+                'i': keplerian_params.get('i'),      # Inclination
+                'Omega': keplerian_params.get('om'), # Longitude of ascending node (RAAN)
+                'varpi': keplerian_params.get('w'),  # Argument of periapsis
+                'MO': keplerian_params.get('tp')     # Mean anomaly at epoch
+            }
+            # Add to the master dictionary, keyed by designation
+            full_orbital_response[des] = orbital_params
+
+        except Exception as e:
+            print(f"Warning: Error parsing API response for {des}: {e}")
+            continue # Skip to the next designation
+
+    # 3. Combine and Return the final result
+    
+    # We return the list of des and the map of orbital params
+    return jsonify({
+        'list_of_des': list_of_des,
+        'orbital_data': full_orbital_response 
+    })
