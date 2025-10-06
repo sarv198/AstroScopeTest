@@ -1,328 +1,455 @@
-<!doctype html>
-<html lang="en" class="scroll-smooth">
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Asteroid Launcher</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroid Impact Simulator</title>
 
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
-  <!-- Leaflet -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
 
-  <style>
-    html, body { height: 100%; }
-    #map { height: calc(100vh - 88px); } /* room for header */
-    .pulse { animation: pulse 1s ease-in-out 2; }
-    @keyframes pulse {
-      0% { transform: scale(1); filter: saturate(1); }
-      50% { transform: scale(1.02); filter: saturate(1.8); }
-      100% { transform: scale(1); filter: saturate(1); }
-    }
-  </style>
+    <style>
+        /* Core Styles from styles.css */
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #010409;
+            color: #c9d1d9;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            /* Updated padding: 80px top to clear the fixed header, 20px for sides/bottom */
+            padding: 20px;
+            padding-top: 80px;
+            gap: 20px;
+        }
+
+        .ui-panel {
+            background-color: rgba(13, 17, 23, 0.85);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(5px);
+            /* Adjusted max-height to account for the new 80px top padding + 20px bottom padding (100px total vertical space) */
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .ui-panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #f0f6fc;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.25rem;
+        }
+
+        .ui-panel h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #f0f6fc;
+            border-top: 1px solid #30363d;
+            padding-top: 15px;
+            margin-top: 25px;
+            font-size: 1.1rem;
+        }
+
+        .ui-panel h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #c9d1d9;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #8b949e;
+        }
+
+        .button {
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .button:hover,
+        .button.active {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        .button:active {
+            transform: scale(0.98);
+        }
+
+        input[type="number"] {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #010409;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 8px;
+            border-radius: 4px;
+            width: calc(100% - 18px);
+            /* Account for padding */
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        /* Results Styling */
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #8b949e;
+        }
+
+        .info-value {
+            color: #f0f6fc;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .damage-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .damage-list li {
+            padding: 5px 0;
+        }
+
+        /* Layout Specific Styles */
+        #controls-column {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        #map-column {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+    </style>
 </head>
-<body class="bg-black text-white">
-  <!-- Header -->
-  <header class="bg-gray-900/60 backdrop-blur border-b border-gray-800">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-xl md:text-2xl font-extrabold text-yellow-300">☄️ Asteroid Launcher</h1>
-      <a href="/main"
-         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold shadow
-                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-gray-900">
-        Back to Solar System
-      </a>
+
+<body>
+    <div class="menu-buttons-container">
+        <button id="impact-map-btn" class="menu-button">
+            <a href="index.html">View Simulation</a>
+        </button>
+
+        <button id="leaderboard-btn" class="menu-button">
+            <a href="leaderboard.html">View Palermo Scale Leaderboard</a>
+        </button>
     </div>
-  </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
-    <!-- Controls -->
-    <aside class="lg:col-span-1 space-y-4">
-      <div class="rounded-2xl bg-gray-800/60 backdrop-blur border border-gray-700 p-4">
-        <h2 class="text-lg font-bold text-yellow-300 mb-3">Launch Settings</h2>
+    <style>
+        a:link,
+        a:visited {
+            background-color: transparent !important;
+            color: #c9d1d9;
+            padding: 5px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
 
-        <label class="block text-sm text-gray-300 mb-1">Real NEO</label>
-        <select id="neoSelect" class="w-full px-3 py-2 rounded-lg bg-gray-900/70 border border-gray-700">
-          <option value="">— Select from Sentry —</option>
-        </select>
-        <p class="text-xs text-gray-400 mt-1">Sorted by energy (Mt), high → low.</p>
+        .menu-buttons-container {
+            /* FIX: Changed from absolute to fixed position so it sits above the main content */
+            position: fixed;
+            top: 20px;
+            /* Shifted to the right by adding ' + 5px' to the centering calculation */
+            left: calc(50% + 5px);
+            transform: translateX(-50%);
+            /* Flex properties for side-by-side layout and spacing */
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+            /* Increased z-index to ensure it is on top */
+        }
 
-        <div class="mt-4 grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm text-gray-300">Energy (Mt)</label>
-            <input id="energyMt" type="number" step="any" min="0"
-                   class="w-full px-3 py-2 rounded-lg bg-gray-900/70 border border-gray-700" placeholder="e.g., 200">
-          </div>
-          <div>
-            <label class="block text-sm text-gray-300">Angle (°)</label>
-            <input id="angleDeg" type="range" min="10" max="90" step="1" value="45" class="w-full">
-            <div class="flex justify-between text-xs text-gray-400">
-              <span>10°</span><span id="angleEcho" class="font-mono">45°</span><span>90°</span>
+        .menu-button {
+            /* Custom styles for smaller, transparent, borderless buttons */
+            font-family: 'Roboto Mono', monospace;
+            background-color: transparent;
+            color: #c9d1d9;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .menu-button:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+    </style>
+
+    <div id="controls-column" class="ui-panel">
+        <h2>ASTEROID PARAMETERS</h2>
+        <p>Modify values and set an impact location.</p>
+
+        <div class="control-group">
+            <label for="density-input">Density (kg/m³)</label>
+            <input type="number" id="density-input" value="7800" min="1">
+        </div>
+
+        <div class="control-group">
+            <label for="speed-input">Speed (m/s)</label>
+            <input type="number" id="speed-input" value="17000" min="1">
+        </div>
+
+        <div class="control-group">
+            <label for="diameter-input">Diameter (meters)</label>
+            <input type="number" id="diameter-input" value="50" min="1">
+        </div>
+
+        <button id="run-button" class="button">Run Impact Simulation</button>
+
+        <div id="results-container">
+            <h3>IMPACT ANALYSIS</h3>
+            <div id="error-display" style="color: #ff7b72; font-weight: bold;"></div>
+
+            <div id="results-content">
+                <div class="info-item">
+                    <span class="info-label">Location</span>
+                    <span id="location-value" class="info-value">0.0000°, 0.0000°</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Kinetic Energy</span>
+                    <span id="energy-value" class="info-value">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Classification</span>
+                    <span id="class-value" class="info-value">-</span>
+                </div>
+
+                <h4>Damage Radii (km)</h4>
+                <ul class="damage-list">
+                    <li style="color: #ff7b72;">Severe Damage: <b id="severe-radius-value">-</b></li>
+                    <li style="color: #f0b975;">Moderate Damage: <b id="moderate-radius-value">-</b></li>
+                    <li style="color: #e6e6a0;">Light Damage: <b id="light-radius-value">-</b></li>
+                </ul>
             </div>
-          </div>
         </div>
+    </div>
 
-        <div class="mt-4">
-          <label class="block text-sm text-gray-300">Population density (people/km²)</label>
-          <input id="popDensity" type="number" step="any" min="0" value="3000"
-                 class="w-full px-3 py-2 rounded-lg bg-gray-900/70 border border-gray-700">
-          <div class="mt-2 flex items-center gap-2">
-            <input id="autoPop" type="checkbox" class="w-4 h-4" checked>
-            <label for="autoPop" class="text-xs text-gray-300">Auto-fill from map click (WorldPop → SEDAC)</label>
-          </div>
-        </div>
+    <div id="map-column" class="ui-panel">
+        <h2>EARTH IMPACT MAP</h2>
+        <div id="map"></div>
+    </div>
 
-        <div class="mt-4 flex gap-2">
-          <button id="launchBtn"
-                  class="w-full px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-semibold shadow">
-            Launch Asteroid
-          </button>
-          <button id="resetBtn"
-                  class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold hidden">
-            Reset
-          </button>
-        </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-        <details class="mt-4">
-          <summary class="cursor-pointer text-sm text-gray-300">Damage model (blast only)</summary>
-          <div class="text-xs text-gray-400 mt-2 space-y-2">
-            <ul class="list-disc ml-4 space-y-1">
-              <li><span class="font-mono">W<sub>kt</sub> = 1000 × Energy<sub>Mt</sub></span> (TNT equivalent)</li>
-              <li><span class="font-mono">r<sub>10psi</sub> = 0.40 · W<sub>kt</sub><sup>1/3</sup> · C(θ)</span></li>
-              <li><span class="font-mono">r<sub>5psi</sub>  = 0.75 · W<sub>kt</sub><sup>1/3</sup> · C(θ)</span></li>
-              <li><span class="font-mono">r<sub>1psi</sub>  = 2.10 · W<sub>kt</sub><sup>1/3</sup> · C(θ)</span></li>
-            </ul>
-            <p>with <span class="font-mono">C(θ) = clamp(0.4, 1.0, sin(θ))</span> (θ in degrees). Casualties are area × density by zone weights.</p>
-          </div>
-        </details>
-      </div>
+    <script>
+        // --- DOM Element Selection ---
+        const densityInput = document.getElementById('density-input');
+        const speedInput = document.getElementById('speed-input');
+        const diameterInput = document.getElementById('diameter-input');
+        const runButton = document.getElementById('run-button');
 
-      <div class="rounded-2xl bg-gray-800/60 backdrop-blur border border-gray-700 p-4 text-xs text-gray-400">
-        <p class="mb-1 font-semibold text-gray-300">Notes</p>
-        <ul class="list-disc ml-4 space-y-1">
-          <li>Blast‐only demo (no thermal/ejecta/wave/runup).</li>
-          <li>Rings are idealized circles (“optimum airburst” cube-root scaling).</li>
-          <li>Angle affects coupling; vertical ≈ strongest ground blast.</li>
-        </ul>
-      </div>
-    </aside>
+        const errorDisplay = document.getElementById('error-display');
+        const locationValue = document.getElementById('location-value');
+        const energyValue = document.getElementById('energy-value');
+        const classValue = document.getElementById('class-value');
+        const severeRadiusValue = document.getElementById('severe-radius-value');
+        const moderateRadiusValue = document.getElementById('moderate-radius-value');
+        const lightRadiusValue = document.getElementById('light-radius-value');
 
-    <!-- Map + Results -->
-    <section class="lg:col-span-3 space-y-4">
-      <div class="relative">
-        <div id="map" class="rounded-2xl overflow-hidden border border-gray-700"></div>
-        <!-- Legend -->
-        <div class="absolute top-3 left-3 z-[500] rounded-xl bg-gray-900/70 backdrop-blur border border-gray-700 px-3 py-2 text-xs">
-          <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-full" style="background:#ef4444"></span> Severe (≈10 psi)</div>
-          <div class="flex items-center gap-2 mt-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#f59e0b"></span> Moderate (≈5 psi)</div>
-          <div class="flex items-center gap-2 mt-1"><span class="inline-block w-3 h-3 rounded-full" style="background:#15803d"></span> Light (≈1 psi)</div>
-        </div>
-      </div>
+        // --- State Variables ---
+        let impactLocation = { lat: 0, lng: 0 };
+        let map;
+        let impactMarker = null;
+        const impactCircles = [];
 
-      <div class="rounded-2xl bg-gray-800/60 backdrop-blur border border-gray-700 p-4">
-        <h2 class="text-lg font-bold text-yellow-300 mb-2">Projected Impact Summary</h2>
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">10 psi radius (km)</p>
-            <p id="r10" class="text-2xl font-mono">—</p>
-          </div>
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">5 psi radius (km)</p>
-            <p id="r5" class="text-2xl font-mono">—</p>
-          </div>
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">1 psi radius (km)</p>
-            <p id="r1" class="text-2xl font-mono">—</p>
-          </div>
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">Severe casualties (est.)</p>
-            <p id="cSevere" class="text-2xl font-mono text-red-400">—</p>
-          </div>
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">Moderate casualties (est.)</p>
-            <p id="cModerate" class="text-2xl font-mono text-orange-300">—</p>
-          </div>
-          <div class="rounded-xl bg-gray-900/60 border border-gray-700 p-3">
-            <p class="text-gray-400">Total casualties (est.)</p>
-            <p id="cTotal" class="text-2xl font-mono text-yellow-300">—</p>
-          </div>
-        </div>
-        <p class="text-xs text-gray-500 mt-3">Demo model. Use for visualization only.</p>
-      </div>
-    </section>
-  </main>
+        // --- Core Calculation Logic ---
+        function calculateImpactRadius(density, speed, diameter) {
+            if (density <= 0 || speed <= 0 || diameter <= 0) {
+                throw new Error("Inputs must be positive numbers.");
+            }
+            const radius = diameter / 2;
+            const volume = (4 / 3) * Math.PI * Math.pow(radius, 3);
+            const mass = density * volume;
+            const kineticEnergy = 0.5 * mass * Math.pow(speed, 2);
 
-  <script>
-    // ---------------- Map ----------------
-    const map = L.map('map', {worldCopyJump:true}).setView([20, 0], 2);
+            // Simplified empirical formula for damage radius based on energy (in Joules)
+            // Constants are chosen for plausible results
+            const severeRadiusKm = 0.001 * Math.pow(kineticEnergy, 1 / 3.3);
+            const moderateRadiusKm = 0.005 * Math.pow(kineticEnergy, 1 / 3.2);
+            const lightRadiusKm = 0.02 * Math.pow(kineticEnergy, 1 / 3.1);
 
-    // Colorful basemap (Carto Voyager)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd', maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-    }).addTo(map);
+            let classification = 'Light';
+            if (kineticEnergy > 5e15) classification = 'Moderate'; // ~1 Megaton TNT
+            if (kineticEnergy > 5e17) classification = 'Severe'; // ~100 Megatons TNT
 
-    // Red pin (SVG)
-    const pinSvg = encodeURIComponent(
-      "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>" +
-      "<path fill='%23ef4444' stroke='white' stroke-width='1' d='M12 2c-4.4 0-8 3.4-8 7.6 0 5.7 8 12.4 8 12.4s8-6.7 8-12.4C20 5.4 16.4 2 12 2z'/>" +
-      "<circle cx='12' cy='9.5' r='3.2' fill='white'/></svg>"
-    );
-    const impactIcon = L.icon({ iconUrl: `data:image/svg+xml;utf8,${pinSvg}`, iconSize: [36,36], iconAnchor: [18,36], popupAnchor: [0,-28] });
+            return {
+                kinetic_energy_joules: kineticEnergy,
+                severe_radius_km: severeRadiusKm,
+                moderate_radius_km: moderateRadiusKm,
+                light_radius_km: lightRadiusKm,
+                damage_classification: classification,
+            };
+        }
 
-    let impactMarker = null;
-    let ring10 = null, ring5 = null, ring1 = null;
+        // Helper to format numbers
+        const formatNumber = (num, decimals = 2) => num.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
 
-    function clearRings(){
-      [ring10, ring5, ring1, impactMarker].forEach(x => x && map.removeLayer(x));
-      ring10 = ring5 = ring1 = impactMarker = null;
-    }
-    function kmToMeters(km){ return km * 1000; }
-    function drawRings(lat, lng, r10km, r5km, r1km){
-      clearRings();
-      impactMarker = L.marker([lat,lng], {title:"Impact Center", icon: impactIcon}).addTo(map);
+        // --- Main Simulation Function ---
+        function runCalculation() {
+            try {
+                errorDisplay.textContent = '';
 
-      ring1 = L.circle([lat,lng], {radius: kmToMeters(r1km), color:'#15803d', weight:1, fillOpacity:0.10});
-      ring5 = L.circle([lat,lng], {radius: kmToMeters(r5km), color:'#f59e0b', weight:1, fillOpacity:0.14});
-      ring10= L.circle([lat,lng], {radius: kmToMeters(r10km), color:'#ef4444', weight:1, fillOpacity:0.20});
+                const results = calculateImpactRadius(
+                    parseFloat(densityInput.value),
+                    parseFloat(speedInput.value),
+                    parseFloat(diameterInput.value)
+                );
 
-      ring10.bindTooltip('Severe damage zone (≈10 psi)', {sticky:true});
-      ring5.bindTooltip('Moderate damage zone (≈5 psi)', {sticky:true});
-      ring1.bindTooltip('Light damage zone (≈1 psi)', {sticky:true});
+                // Update UI text
+                locationValue.textContent = `${formatNumber(impactLocation.lat, 4)}°, ${formatNumber(impactLocation.lng, 4)}°`;
+                energyValue.textContent = `${results.kinetic_energy_joules.toExponential(2)} J`;
 
-      ring1.addTo(map); ring5.addTo(map); ring10.addTo(map);
-      map.fitBounds(ring1.getBounds(), {padding:[20,20]});
-    }
+                const classification = results.damage_classification;
+                classValue.textContent = classification;
+                if (classification === 'Severe') classValue.style.color = '#ff7b72';
+                else if (classification === 'Moderate') classValue.style.color = '#f0b975';
+                else classValue.style.color = '#a3ccae';
 
-    // --------------- Controls ---------------
-    const neoSelect  = document.getElementById('neoSelect');
-    const energyMt   = document.getElementById('energyMt');
-    const angleDeg   = document.getElementById('angleDeg');
-    const angleEcho  = document.getElementById('angleEcho');
-    const popDensity = document.getElementById('popDensity');
-    const autoPop    = document.getElementById('autoPop');
-    const launchBtn  = document.getElementById('launchBtn');
-    const resetBtn   = document.getElementById('resetBtn');
+                severeRadiusValue.textContent = `${formatNumber(results.severe_radius_km)} km`;
+                moderateRadiusValue.textContent = `${formatNumber(results.moderate_radius_km)} km`;
+                lightRadiusValue.textContent = `${formatNumber(results.light_radius_km)} km`;
 
-    function debounce(fn, wait=180){ let t; return (...a)=>{clearTimeout(t); t=setTimeout(()=>fn(...a), wait);} }
-    const runImpactDebounced = debounce(()=>runImpact(false), 180);
+                updateMap(results);
 
-    // Load NEOs (server already sorted high→low)
-    fetch('/sim/neos').then(r => r.json()).then(({neos = []}) => {
-      neos.forEach(n => {
-        const mt = Number(n.energy_mt);
-        const opt = document.createElement('option');
-        opt.value = mt;
-        opt.textContent = `${n.name} — ${mt.toFixed(3)} Mt${n.status==='Removed'?' (removed)':''}`;
-        neoSelect.appendChild(opt);
-      });
-    });
+            } catch (err) {
+                errorDisplay.textContent = `Calculation Error: ${err.message}`;
+                clearMap();
+            }
+        }
 
-    neoSelect.addEventListener('change', () => {
-      if (neoSelect.value) energyMt.value = neoSelect.value;
-      if (launched && clickLatLng) runImpactDebounced();
-    });
+        // --- Map Update Functions ---
+        function clearMap() {
+            impactCircles.forEach(circle => map.removeLayer(circle));
+            impactCircles.length = 0; // Clear the array
+        }
 
-    // Map click → set point (disabled after launch). Auto-fill population.
-    let clickLatLng = null;
-    let launched = false;
+        function updateMap(results) {
+            // Clear previous circles
+            clearMap();
 
-    async function handleMapClick(e){
-      if (launched) return; // lock after launch
-      clickLatLng = e.latlng;
-      L.popup().setLatLng(e.latlng).setContent('Impact point set here').openOn(map);
+            // Set marker position
+            if (!impactMarker) {
+                impactMarker = L.marker(impactLocation).addTo(map);
+            } else {
+                impactMarker.setLatLng(impactLocation);
+            }
 
-      if (autoPop && autoPop.checked) {
-        try {
-          const q = new URLSearchParams({lat: clickLatLng.lat, lng: clickLatLng.lng, year: 2020}).toString();
-          const res = await fetch(`/sim/population?${q}`);
-          const j = await res.json();
-          if (j.ok && Number.isFinite(j.density_km2)) {
-            popDensity.value = Math.max(0, j.density_km2).toFixed(0);
-          }
-        } catch (_) { /* ignore */ }
-      }
-      runImpactDebounced();
-    }
-    map.on('click', handleMapClick);
+            // Define circles to draw
+            const circlesToDraw = [
+                { radius: results.light_radius_km * 1000, color: '#e6e6a0' },
+                { radius: results.moderate_radius_km * 1000, color: '#f0b975' },
+                { radius: results.severe_radius_km * 1000, color: '#ff7b72' },
+            ].sort((a, b) => b.radius - a.radius); // Draw largest first
 
-    // Angle live update (keeps center fixed after launch)
-    angleDeg.addEventListener('input', () => {
-      angleEcho.textContent = `${angleDeg.value}°`;
-      if (clickLatLng) runImpactDebounced();
-    });
-    [energyMt, popDensity].forEach(el => el.addEventListener('input', () => {
-      if (clickLatLng) runImpactDebounced();
-    }));
+            // Draw new circles
+            circlesToDraw.forEach(c => {
+                const circle = L.circle(impactLocation, {
+                    radius: c.radius,
+                    color: c.color,
+                    fillColor: c.color,
+                    fillOpacity: 0.1,
+                    weight: 2
+                }).addTo(map);
+                impactCircles.push(circle);
+            });
 
-    // Run physics; highlight rings on initial launch
-    async function runImpact(highlight=false){
-      if (!clickLatLng) return;
-      const E = parseFloat(energyMt.value || '0');
-      if (!E || E <= 0) return;
-      const payload = {
-        lat: clickLatLng.lat,
-        lng: clickLatLng.lng,
-        energy_mt: E,
-        angle_deg: parseFloat(angleDeg.value || '45'),
-        pop_density_km2: parseFloat(popDensity.value || '3000')
-      };
-      const res = await fetch('/sim/impact', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
-      });
-      const data = await res.json();
+            // Adjust map view
+            const zoomLevel = results.light_radius_km > 200 ? 3 : (results.light_radius_km > 50 ? 5 : 8);
+            map.setView(impactLocation, zoomLevel);
+        }
 
-      drawRings(data.center.lat, data.center.lng,
-                data.radii_km.r10psi, data.radii_km.r5psi, data.radii_km.r1psi);
+        // --- Event Listeners ---
+        function handleLocationSelect(e) {
+            impactLocation = e.latlng;
+            runCalculation();
+        }
 
-      document.getElementById('r10').textContent = data.radii_km.r10psi.toFixed(2);
-      document.getElementById('r5').textContent  = data.radii_km.r5psi.toFixed(2);
-      document.getElementById('r1').textContent  = data.radii_km.r1psi.toFixed(2);
-      document.getElementById('cSevere').textContent   = data.casualties_est.severe.toLocaleString();
-      document.getElementById('cModerate').textContent = data.casualties_est.moderate.toLocaleString();
-      document.getElementById('cTotal').textContent    = data.casualties_est.total.toLocaleString();
+        runButton.addEventListener('click', runCalculation);
+        densityInput.addEventListener('change', runCalculation);
+        speedInput.addEventListener('change', runCalculation);
+        diameterInput.addEventListener('change', runCalculation);
 
-      if (highlight) highlightSequence();
-    }
 
-    function setCircleStyle(c, {weight, fillOpacity}){
-      if (!c) return;
-      c.setStyle({weight, fillOpacity});
-    }
-    function highlightSequence(){
-      const normal = {r10:{w:1, f:0.20}, r5:{w:1, f:0.14}, r1:{w:1, f:0.10}};
-      const strong = {w:5, f:0.35};
-      setCircleStyle(r10, {weight:normal.r10.w, fillOpacity:normal.r10.f});
-      setCircleStyle(r5,  {weight:normal.r5.w,  fillOpacity:normal.r5.f});
-      setCircleStyle(r1,  {weight:normal.r1.w,  fillOpacity:normal.r1.f});
-      setTimeout(()=>{ ring10.bringToFront(); setCircleStyle(r10, strong); ring10._path?.classList.add('pulse'); }, 100);
-      setTimeout(()=>{ setCircleStyle(r10, normal.r10); ring10._path?.classList.remove('pulse');
-                       ring5.bringToFront();  setCircleStyle(r5, strong);  ring5._path?.classList.add('pulse'); }, 1100);
-      setTimeout(()=>{ setCircleStyle(r5, normal.r5);   ring5._path?.classList.remove('pulse');
-                       ring1.bringToFront();  setCircleStyle(r1, strong);  ring1._path?.classList.add('pulse'); }, 2100);
-      setTimeout(()=>{ setCircleStyle(r1, normal.r1);   ring1._path?.classList.remove('pulse'); }, 3100);
-    }
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Leaflet Map
+            map = L.map('map').setView([20, 0], 2);
 
-    // Launch locks marker/center
-    launchBtn.addEventListener('click', async () => {
-      if (!clickLatLng) { alert('Click on the map to choose an impact point first.'); return; }
-      launched = true;
-      runImpact(true);
-      resetBtn.classList.remove('hidden');
-    });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
 
-    // Reset unlocks
-    resetBtn.addEventListener('click', () => {
-      launched = false;
-      clearRings();
-      clickLatLng = null;
-      resetBtn.classList.add('hidden');
-      map.closePopup();
-    });
-  </script>
+            // Fix for default Leaflet icon issue
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+                iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+            });
+
+            // Set up map click listener
+            map.on('click', handleLocationSelect);
+
+            // Run initial calculation on load
+            runCalculation();
+        });
+    </script>
+
 </body>
+
 </html>
