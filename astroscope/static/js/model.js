@@ -299,7 +299,7 @@ const neoData = [
         const neoMesh = new THREE.Mesh(
             new THREE.DodecahedronGeometry(enhancedRadius, 0),
             new THREE.MeshStandardMaterial({ 
-                color: 0xcc3333, // Red color
+                color:0xeeffff, // Red color
                 roughness: 0.8, metalness: 0.2 
             })
         );
