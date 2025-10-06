@@ -290,7 +290,7 @@ const neoData = [
 
     // 2. Iterate through the Keplerian data to create meshes and orbits
     neoData.forEach((data, index) => {
-        const enhancedRadius = 0.8; 
+        const enhancedRadius = 1.5; 
         const a_au = data.a;
         const orbitalPeriod = Math.sqrt(a_au ** 3) * 365.25;
         const L = data.M0 !== undefined ? (data.M0 + data.varpi) % 360 : data.L || 0;
