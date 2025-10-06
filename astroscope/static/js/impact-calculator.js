@@ -1,267 +1,187 @@
 /**
- * Impact Calculator - Asteroid Impact Radius and Damage Assessment
- * 
- * This module provides functions to calculate impact radius, damage zones,
- * and classification for asteroid impacts based on physical parameters.
- * 
- * Based on scientific models for impact cratering and blast radius calculations.
+ * Toggles the visibility of the detailed asteroid information.
+ * This is used by the onclick handler in the leaderboard HTML.
+ * @param {number} index - The zero-based index of the asteroid in the list.
  */
+function toggleDetails(index) {
+    const el = document.getElementById(`details-${index}`);
+    el.classList.toggle('hidden');
+}
+
+// =======================================================
+// PALERMO SCALE CALCULATOR LOGIC
+// =======================================================
+
+// DOM helpers
+const $ = (id) => document.getElementById(id);
+
+// Inputs
+const modeEnergyEl = $('mode-energy');
+const modeSizeEl = $('mode-size');
+const blockEnergy = $('block-energy');
+const blockSize = $('block-size');
+const piEl = $('calc-pi');
+const tiEl = $('calc-ti');
+const EmtEl = $('calc-E-mt');
+const dEl = $('calc-diam');
+const vEl = $('calc-vel');
+const rhoEl = $('calc-rho');
+const fbEl = $('calc-fb');
+const autoFbEl = $('calc-auto-fb');
+
+// Outputs
+const energyMtEl = $('calc-energy-mt');
+const energyJEl = $('calc-energy-j');
+const fbEchoEl = $('calc-fb-echo');
+const fbNoteEl = $('calc-fb-note');
+const psEl = $('calc-ps');
+const psInterpEl = $('calc-ps-interp');
+
+// Constants
+const MT_J = 4.184e15; // Joules per Megaton of TNT
+const PI = Math.PI;
+
+// Background Frequency Constants (from NASA/JPL Sentry Documentation)
+// Based on Diameter (D in km)
+const A_d = 6.3e-3; 
+const b_d = 2.7;
+// Based on Energy (E in Mt)
+const A_e = 1.1774080373049495e-2;
+const alpha_e = 0.9;
 
 /**
- * Calculate impact radius and damage classification for an asteroid impact.
- * 
- * @param {number} density - Asteroid density in kg/m^3 (typical range: 2000-8000)
- * @param {number} speed - Impact speed in m/s (typical range: 11000-70000)
- * @param {number} diameter - Asteroid diameter in meters
- * @returns {object} Dictionary containing kinetic energy, impact radii, and damage classification
+ * Estimates background impact frequency (f_B) based on asteroid diameter.
+ * f_B = A_d * D^-b_d (where D is in km)
+ * @param {number} d_m - Diameter in meters.
+ * @returns {number|null} Estimated f_B in impacts/year.
  */
-function calculateImpactRadius(density, speed, diameter) {
-    // --- Input Validation (Ensuring numbers are valid) ---
-    const numericInputs = [density, speed, diameter].map(Number); // Convert to number
-    
-    if (numericInputs.some(isNaN)) {
-        throw new Error("All inputs must be numeric values.");
-    }
-    
-    const [d, s, dia] = numericInputs; // Destructure the converted values
+function estimateFBfromDiameter(d_m) {
+    if (!d_m || d_m <= 0) return null;
+    const d_km = d_m / 1000;
+    const fb = A_d * Math.pow(d_km, -b_d);
+    return (isFinite(fb) && fb > 0) ? fb : null;
+}
 
-    if (d <= 0 || s <= 0 || dia <= 0) {
-        throw new Error("Density, Speed, and Diameter must be positive values.");
-    }
+/**
+ * Estimates background impact frequency (f_B) based on kinetic energy.
+ * f_B = A_e * E^-alpha_e (where E is in Mt)
+ * @param {number} E_mt - Kinetic energy in Megatons of TNT.
+ * @returns {number|null} Estimated f_B in impacts/year.
+ */
+function estimateFBfromEnergy(E_mt) {
+    if (!E_mt || E_mt <= 0) return null;
+    const fb = A_e * Math.pow(E_mt, -alpha_e);
+    return (isFinite(fb) && fb > 0) ? fb : null;
+}
 
-    // --- Calculation ---
-    
-    // Calculate volume and kinetic energy
-    // E = (π / 12) * density * diameter^3 * speed^2
-    const kineticEnergy = (Math.PI / 12) * d * (dia ** 3) * (s ** 2);
+/**
+ * Calculates kinetic energy in Megatons from physical parameters.
+ * E = 0.5 * m * v^2
+ * @param {number} d_m - Diameter in meters.
+ * @param {number} rho - Density in kg/m³.
+ * @param {number} v_kms - Velocity in km/s.
+ * @returns {number} Kinetic Energy in Megatons.
+ */
+function energyFromSizeMt(d_m, rho, v_kms) {
+    if (!d_m || !rho || !v_kms || d_m <= 0 || rho <= 0 || v_kms <= 0) return NaN;
+    // Volume (m³) * Density (kg/m³) = Mass (kg)
+    const m = (PI / 6) * rho * Math.pow(d_m, 3);
+    // Convert velocity to m/s
+    const v = v_kms * 1000;
+    // Energy in Joules
+    const EJ = 0.5 * m * v * v;
+    // Convert to Megatons
+    return EJ / MT_J;
+}
 
-    // Calculate impact radii using different damage coefficients
-    // R = k * E^(1/3)
-    const severe_k = 1.8e-4;
-    const moderate_k = 4.0e-4;
-    const light_k = 8.0e-4;
+// Formatting functions
+const fmtSci = (x) => (!isFinite(x) || x <= 0) ? '—' : x.toExponential(2).replace('+', '');
+const fmtNum = (x, n = 2) => isFinite(x) ? Number(x).toFixed(n) : '—';
 
-    const impactPowerThird = Math.cbrt(kineticEnergy); // Cube root of kinetic energy
+/**
+ * Recalculates all output fields based on current input values.
+ */
+function recalc() {
+    const Pi = parseFloat(piEl.value);
+    const Ti = parseFloat(tiEl.value);
+    let E_mt = NaN;
+    let fbVal = parseFloat(fbEl.value);
+    let fbSrc = 'manual';
 
-    // Calculate radii in meters
-    const severe_radius_m = severe_k * impactPowerThird;
-    const moderate_radius_m = moderate_k * impactPowerThird;
-    const light_radius_m = light_k * impactPowerThird;
+    const usingEnergy = modeEnergyEl.checked;
 
-    // Convert to kilometers
-    const severe_radius_km = severe_radius_m / 1000;
-    const moderate_radius_km = moderate_radius_m / 1000;
-    const light_radius_km = light_radius_m / 1000;
-
-    // --- Damage Classification ---
-    let classification;
-    if (severe_radius_km > 5) {
-        classification = "Severe";
-    } else if (moderate_radius_km > 2) {
-        classification = "Moderate";
+    if (usingEnergy) {
+        // 1. Get E_mt directly from the input
+        E_mt = parseFloat(EmtEl.value);
+        if (autoFbEl.checked) {
+            // 2. Auto-estimate f_B from energy
+            const est = estimateFBfromEnergy(E_mt);
+            if (est) {
+                fbVal = est;
+                fbSrc = 'auto (from energy)';
+                fbEl.value = est.toExponential(2);
+            }
+        }
     } else {
-        classification = "Light";
-    }
-
-    // --- Result Object ---
-    const result = {
-        kinetic_energy_joules: kineticEnergy,
-        kinetic_energy_megatons: kineticEnergy / (4.184e15), // Convert to megatons TNT
-        severe_radius_km: severe_radius_km,
-        moderate_radius_km: moderate_radius_km,
-        light_radius_km: light_radius_km,
-        damage_classification: classification,
-        input_parameters: {
-            density_kg_m3: d,
-            speed_m_s: s,
-            diameter_m: dia
+        // 1. Calculate E_mt from size/density/velocity
+        const D = parseFloat(dEl.value);
+        const v = parseFloat(vEl.value);
+        const rho = parseFloat(rhoEl.value);
+        E_mt = energyFromSizeMt(D, rho, v);
+        
+        if (autoFbEl.checked) {
+            // 2. Auto-estimate f_B from diameter
+            const est = estimateFBfromDiameter(D);
+            if (est) {
+                fbVal = est;
+                fbSrc = 'auto (from diameter)';
+                fbEl.value = est.toExponential(2);
+            }
         }
-    };
+    }
 
-    return result;
-}
-
-/**
- * Calculate crater dimensions based on impact parameters.
- * 
- * @param {number} diameter - Asteroid diameter in meters
- * @param {number} speed - Impact speed in m/s
- * @param {number} density - Asteroid density in kg/m^3
- * @returns {object} Crater dimensions and characteristics
- */
-function calculateCraterDimensions(diameter, speed, density) {
-    const numericInputs = [diameter, speed, density].map(Number);
+    // --- Energy Output ---
+    const EJ = isFinite(E_mt) ? (E_mt * MT_J) : NaN;
+    energyMtEl.textContent = isFinite(E_mt) ? `${fmtNum(E_mt, 2)} Mt` : '—';
+    energyJEl.textContent = isFinite(EJ) ? `${fmtSci(EJ)} J` : '—';
     
-    if (numericInputs.some(isNaN) || numericInputs.some(x => x <= 0)) {
-        throw new Error("All inputs must be positive numeric values.");
+    // --- f_B Output ---
+    fbEchoEl.textContent = isFinite(fbVal) ? `${fmtSci(fbVal)} /yr` : '—';
+    fbNoteEl.textContent = `source: ${fbSrc}`;
+
+    // --- Palermo Scale Calculation ---
+    let PS = NaN;
+    if (isFinite(Pi) && Pi > 0 && isFinite(Ti) && Ti > 0 && isFinite(fbVal) && fbVal > 0) {
+        // PS = log10( (Pi / Ti) / fB )
+        PS = Math.log10((Pi / Ti) / fbVal);
     }
     
-    const [dia, s, d] = numericInputs;
-    
-    // Calculate kinetic energy
-    const kineticEnergy = (Math.PI / 12) * d * (dia ** 3) * (s ** 2);
-    
-    // Crater scaling laws (simplified model)
-    // These are empirical relationships based on impact crater studies
-    const crater_diameter_m = 1.2 * Math.pow(kineticEnergy / 1e12, 0.294); // D_crater in meters
-    const crater_depth_m = crater_diameter_m * 0.2; // Typical depth-to-diameter ratio
-    
-    return {
-        crater_diameter_m: crater_diameter_m,
-        crater_diameter_km: crater_diameter_m / 1000,
-        crater_depth_m: crater_depth_m,
-        crater_depth_km: crater_depth_m / 1000,
-        crater_volume_m3: Math.PI * Math.pow(crater_diameter_m / 2, 2) * crater_depth_m,
-        kinetic_energy_joules: kineticEnergy
-    };
+    // --- PS Output and Interpretation ---
+    psEl.textContent = isFinite(PS) ? fmtNum(PS, 2) : '—';
+    psInterpEl.textContent =
+        isFinite(PS)
+            ? (PS > 0 ? 'Above background risk' : (PS > -2 ? 'Comparable to background' : 'Well below background'))
+            : '—';
 }
 
 /**
- * Estimate casualties and damage based on impact location and population density.
- * 
- * @param {number} severe_radius_km - Severe damage radius in kilometers
- * @param {number} moderate_radius_km - Moderate damage radius in kilometers
- * @param {number} light_radius_km - Light damage radius in kilometers
- * @param {number} population_density - Population density in people per km²
- * @returns {object} Estimated casualties and affected area
+ * Synchronizes the visibility of the Energy and Size input blocks.
  */
-function estimateCasualties(severe_radius_km, moderate_radius_km, light_radius_km, population_density = 100) {
-    const numericInputs = [severe_radius_km, moderate_radius_km, light_radius_km, population_density].map(Number);
-    
-    if (numericInputs.some(isNaN) || numericInputs.some(x => x < 0)) {
-        throw new Error("All inputs must be non-negative numeric values.");
-    }
-    
-    const [severe_r, moderate_r, light_r, pop_density] = numericInputs;
-    
-    // Calculate areas
-    const severe_area_km2 = Math.PI * severe_r * severe_r;
-    const moderate_area_km2 = Math.PI * moderate_r * moderate_r;
-    const light_area_km2 = Math.PI * light_r * light_r;
-    
-    // Estimate casualties (simplified model)
-    // Severe zone: 90% fatality rate
-    // Moderate zone: 30% fatality rate  
-    // Light zone: 5% fatality rate
-    const severe_casualties = severe_area_km2 * pop_density * 0.9;
-    const moderate_casualties = moderate_area_km2 * pop_density * 0.3;
-    const light_casualties = light_area_km2 * pop_density * 0.05;
-    
-    const total_casualties = severe_casualties + moderate_casualties + light_casualties;
-    
-    return {
-        severe_casualties: Math.round(severe_casualties),
-        moderate_casualties: Math.round(moderate_casualties),
-        light_casualties: Math.round(light_casualties),
-        total_casualties: Math.round(total_casualties),
-        affected_areas: {
-            severe_area_km2: severe_area_km2,
-            moderate_area_km2: moderate_area_km2,
-            light_area_km2: light_area_km2,
-            total_area_km2: severe_area_km2 + moderate_area_km2 + light_area_km2
-        }
-    };
+function syncModeUI() {
+    const usingEnergy = modeEnergyEl.checked;
+    blockEnergy.classList.toggle('hidden', !usingEnergy);
+    blockSize.classList.toggle('hidden', usingEnergy);
+    recalc();
 }
 
-/**
- * Convert asteroid data from NASA format to calculation parameters.
- * 
- * @param {object} nasaData - Data from NASA API (Sentry/SBDB)
- * @returns {object} Parameters suitable for impact calculations
- */
-function convertNasaDataToParameters(nasaData) {
-    // Extract and convert NASA data
-    const diameter_km = parseFloat(nasaData.Diameter?.split(' ')[0]) || 0;
-    const velocity_km_s = parseFloat(nasaData.Velocity?.split(' ')[0]) || 0;
-    
-    // Convert to meters and m/s
-    const diameter_m = diameter_km * 1000;
-    const velocity_m_s = velocity_km_s * 1000;
-    
-    // Assume typical asteroid density (kg/m³)
-    // This could be improved with actual density data if available
-    const density_kg_m3 = 3000; // Typical stony asteroid density
-    
-    return {
-        diameter_m: diameter_m,
-        velocity_m_s: velocity_m_s,
-        density_kg_m3: density_kg_m3,
-        original_data: nasaData
-    };
-}
+// Attach event listeners for mode changes
+[modeEnergyEl, modeSizeEl].forEach(el => el.addEventListener('change', syncModeUI));
 
-/**
- * Comprehensive impact assessment combining all calculations.
- * 
- * @param {object} nasaData - Data from NASA API
- * @param {number} population_density - Population density in people per km² (optional)
- * @returns {object} Complete impact assessment
- */
-function comprehensiveImpactAssessment(nasaData, population_density = 100) {
-    try {
-        // Convert NASA data to calculation parameters
-        const params = convertNasaDataToParameters(nasaData);
-        
-        // Calculate impact radius and damage
-        const impactResults = calculateImpactRadius(
-            params.density_kg_m3,
-            params.velocity_m_s,
-            params.diameter_m
-        );
-        
-        // Calculate crater dimensions
-        const craterResults = calculateCraterDimensions(
-            params.diameter_m,
-            params.velocity_m_s,
-            params.density_kg_m3
-        );
-        
-        // Estimate casualties
-        const casualtyResults = estimateCasualties(
-            impactResults.severe_radius_km,
-            impactResults.moderate_radius_km,
-            impactResults.light_radius_km,
-            population_density
-        );
-        
-        return {
-            asteroid_info: {
-                designation: nasaData.des || nasaData.Full_Name || 'Unknown',
-                diameter_km: params.diameter_m / 1000,
-                velocity_km_s: params.velocity_m_s / 1000,
-                density_kg_m3: params.density_kg_m3
-            },
-            impact_assessment: impactResults,
-            crater_analysis: craterResults,
-            casualty_estimation: casualtyResults,
-            nasa_data: nasaData
-        };
-        
-    } catch (error) {
-        return {
-            error: error.message,
-            nasa_data: nasaData
-        };
-    }
-}
+// Attach event listeners for input changes
+['calc-pi', 'calc-ti', 'calc-E-mt', 'calc-diam', 'calc-vel', 'calc-rho', 'calc-fb', 'calc-auto-fb']
+    .forEach(id => $(id)?.addEventListener('input', recalc));
 
-// Export functions for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    // Node.js environment
-    module.exports = {
-        calculateImpactRadius,
-        calculateCraterDimensions,
-        estimateCasualties,
-        convertNasaDataToParameters,
-        comprehensiveImpactAssessment
-    };
-} else {
-    // Browser environment - attach to window object
-    window.ImpactCalculator = {
-        calculateImpactRadius,
-        calculateCraterDimensions,
-        estimateCasualties,
-        convertNasaDataToParameters,
-        comprehensiveImpactAssessment
-    };
-}
+// Initial setup and calculation on page load
+document.addEventListener('DOMContentLoaded', () => {
+    syncModeUI();
+});
